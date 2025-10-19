@@ -317,6 +317,30 @@ Các lỗi thường gặp:
 - Lỗi kết nối đến nguồn dữ liệu
 - Thiếu dữ liệu cho khoảng thời gian yêu cầu
 
+## 🖥️ Giao diện Web
+
+### Khởi chạy giao diện web
+```bash
+# Đảm bảo API server đang chạy (port 8501)
+python start_server.py
+
+# Trong terminal khác, khởi chạy web interface
+python start_web_interface.py
+```
+
+### Tính năng giao diện web
+- 🔍 **Tìm kiếm thông minh**: Nhập mã cổ phiếu hoặc tên công ty
+- 💡 **Gợi ý tự động**: Hệ thống gợi ý tên công ty chính xác
+- 📊 **Biểu đồ tương tác**: Biểu đồ nến, khối lượng giao dịch
+- 💰 **Hiển thị VND**: Tất cả số liệu tài chính với đơn vị VND
+- 📱 **Responsive**: Tương thích mọi thiết bị
+- 🎨 **Giao diện đẹp**: Thiết kế hiện đại, thân thiện người dùng
+
+### Truy cập giao diện
+- **Web Interface**: http://localhost:8502
+- **API Server**: http://localhost:8501
+- **API Docs**: http://localhost:8501/docs
+
 ## 🚀 Production Deployment
 
 ### 🌐 **Network Configuration**
