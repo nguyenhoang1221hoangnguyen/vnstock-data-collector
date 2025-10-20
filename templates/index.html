@@ -603,42 +603,6 @@
                     </div>
                 </div>
                 ` : ''}
-
-                ${data.technical_indicators.latest_price ? `
-                <div class="card fade-in">
-                    <div class="card-header">
-                        <h5><i class="fas fa-chart-bar"></i> Chỉ số kỹ thuật</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <span class="info-label">Giá gần nhất</span>
-                                <span class="info-value">${data.technical_indicators.latest_price}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Khối lượng gần nhất</span>
-                                <span class="info-value">${data.technical_indicators.latest_volume}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Thay đổi kỳ</span>
-                                <span class="info-value ${data.technical_indicators.price_change_percent && data.technical_indicators.price_change_percent.includes('-') ? 'price-negative' : 'price-positive'}">${data.technical_indicators.price_change_period}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">% Thay đổi kỳ</span>
-                                <span class="info-value ${data.technical_indicators.price_change_percent && data.technical_indicators.price_change_percent.includes('-') ? 'price-negative' : 'price-positive'}">${data.technical_indicators.price_change_percent}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Giá cao nhất kỳ</span>
-                                <span class="info-value">${data.technical_indicators.max_price}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Giá thấp nhất kỳ</span>
-                                <span class="info-value">${data.technical_indicators.min_price}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                ` : ''}
             `;
 
             results.style.display = 'block';

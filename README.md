@@ -4,7 +4,6 @@
 
 ## 🚀 Tính năng chính
 
-- **🌐 Giao diện web đẹp mắt**: Tìm kiếm thông minh, hiển thị đầy đủ thông tin với đơn vị VND
 - **📊 Thu thập dữ liệu toàn diện**: 15+ năm dữ liệu lịch sử (3,940+ bản ghi) + 17+ năm báo cáo tài chính (51 báo cáo)
 - **🔗 API RESTful hoàn chỉnh**: Tích hợp dễ dàng với n8n, AI agents và các hệ thống khác
 - **🤖 Tối ưu cho AI**: Cấu trúc JSON rõ ràng, metadata phong phú, gợi ý phân tích tự động
@@ -49,10 +48,7 @@ cd vnstock-data-collector
 # Chạy setup tự động
 python setup.py
 
-# Khởi chạy giao diện web (khuyến nghị)
-python start_web_interface.py
-
-# Hoặc khởi chạy API server
+# Khởi chạy server
 python start_server.py
 ```
 
@@ -67,10 +63,7 @@ source venv/bin/activate  # Linux/Mac
 # Cài đặt dependencies
 pip install -r requirements.txt
 
-# Khởi chạy giao diện web (khuyến nghị)
-python start_web_interface.py
-
-# Hoặc khởi chạy API server
+# Khởi chạy server
 python start_server.py
 ```
 
@@ -81,8 +74,7 @@ docker build -t vnstock-collector .
 docker run -p 8501:8501 vnstock-collector
 ```
 
-**Giao diện web**: `http://localhost:8502` (khuyến nghị)
-**API server**: `http://localhost:8501`
+**Server sẽ chạy tại**: `http://localhost:8501`
 
 ## 📖 API Documentation
 
@@ -357,17 +349,12 @@ Giảm khoảng thời gian hoặc tăng RAM
 ```
 vnstock-data-collector/
 ├── 📄 main.py                     # FastAPI server chính
-├── 📄 web_interface.py            # Giao diện web đẹp mắt
-├── 📄 start_web_interface.py      # Script khởi chạy web interface
 ├── 📄 vnstock_data_collector_simple.py  # Data collector engine
-├── 📄 start_server.py             # Script khởi chạy API server
+├── 📄 start_server.py             # Script khởi chạy
 ├── 📄 setup.py                    # Auto setup script
 ├── 📄 test_api.py                 # API testing script
 ├── 📄 requirements.txt            # Dependencies
 ├── 📄 n8n_workflow_example.json   # n8n workflow mẫu
-├── 📁 templates/                  # HTML templates
-│   └── 📄 index.html              # Giao diện web chính
-├── 📁 static/                     # CSS, JS, images
 ├── 📄 README.md                   # Documentation
 ├── 📄 .gitignore                  # Git ignore rules
 └── 📁 venv/                       # Virtual environment

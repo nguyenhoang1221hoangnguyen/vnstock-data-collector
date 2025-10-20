@@ -132,7 +132,7 @@ async def analyze_stock(symbol: str = Form(...)):
         
         # Get comprehensive data
         logger.info(f"Analyzing stock: {symbol}")
-        data = data_collector.get_complete_stock_data(symbol)
+        data = data_collector.get_comprehensive_data(symbol)
         
         if not data or data.get("error"):
             raise HTTPException(status_code=404, detail=f"Không tìm thấy dữ liệu cho mã cổ phiếu: {symbol}")
@@ -148,15 +148,8 @@ async def analyze_stock(symbol: str = Form(...)):
 
 def format_stock_data(data: Dict[str, Any]) -> Dict[str, Any]:
     """Format stock data for web display"""
-    request_info = data.get("request_info", {})
-    overview = data.get("overview", {})
-    historical_data = data.get("historical_data", {})
-    financial_data = data.get("financial_data", {})
-    market_data = data.get("market_data", {})
-    ai_metadata = data.get("ai_analysis_metadata", {})
-    
     formatted = {
-        "symbol": request_info.get("symbol", ""),
+        "symbol": data.get("symbol", ""),
         "timestamp": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
         "overview": {},
         "current_price": {},
@@ -167,73 +160,58 @@ def format_stock_data(data: Dict[str, Any]) -> Dict[str, Any]:
         "market_data": {}
     }
     
-    # Format overview data - extract from current_price_info
-    if "current_price_info" in overview and overview["current_price_info"]:
-        current_info = overview["current_price_info"]
-        if isinstance(current_info, list) and len(current_info) > 0:
-            latest = current_info[-1]  # Get latest record
-            formatted["overview"] = {
-                "company_name": f"Công ty {request_info.get('symbol', 'N/A')}",
-                "sector": "N/A",
-                "industry": "N/A", 
-                "market_cap": "N/A",
-                "shares_outstanding": "N/A",
-                "listing_date": "N/A"
-            }
-            
-            # Format current price data from historical data
-            formatted["current_price"] = {
-                "price": format_currency(latest.get("close", 0)),
-                "change": format_currency(latest.get("change", 0)),
-                "change_percent": format_percentage(latest.get("change_percent", 0)),
-                "volume": format_number(latest.get("volume", 0)),
-                "high": format_currency(latest.get("high", 0)),
-                "low": format_currency(latest.get("low", 0)),
-                "open": format_currency(latest.get("open", 0)),
-                "previous_close": format_currency(latest.get("close", 0))
-            }
-    
-    # Format historical summary
-    if "daily_data" in historical_data and historical_data["daily_data"]:
-        daily_data = historical_data["daily_data"]
-        if daily_data:
-            prices = [day.get("close", 0) for day in daily_data if day.get("close")]
-            volumes = [day.get("volume", 0) for day in daily_data if day.get("volume")]
-            
-            formatted["historical_summary"] = {
-                "period": f"{historical_data.get('period', {}).get('start_date', 'N/A')} - {historical_data.get('period', {}).get('end_date', 'N/A')}",
-                "total_records": format_number(len(daily_data)),
-                "avg_volume": format_number(sum(volumes) / len(volumes) if volumes else 0),
-                "max_price": format_currency(max(prices) if prices else 0),
-                "min_price": format_currency(min(prices) if prices else 0),
-                "volatility": format_percentage(ai_metadata.get("key_metrics_summary", {}).get("price_change_percent", 0))
-            }
-    
-    # Format financial highlights - basic info from financial_data
-    if "balance_sheet" in financial_data:
-        formatted["financial_highlights"] = {
-            "revenue": "N/A",
-            "net_income": "N/A", 
-            "total_assets": "N/A",
-            "total_liabilities": "N/A",
-            "equity": "N/A",
-            "debt_to_equity": "N/A",
-            "roe": "N/A",
-            "roa": "N/A",
-            "pe_ratio": "N/A",
-            "pb_ratio": "N/A"
+    # Format overview data
+    if "overview" in data:
+        overview = data["overview"]
+        formatted["overview"] = {
+            "company_name": overview.get("company_name", "N/A"),
+            "sector": overview.get("sector", "N/A"),
+            "industry": overview.get("industry", "N/A"),
+            "market_cap": format_currency(overview.get("market_cap", 0)),
+            "shares_outstanding": format_number(overview.get("shares_outstanding", 0)),
+            "listing_date": overview.get("listing_date", "N/A")
         }
     
-    # Add key metrics from AI metadata
-    key_metrics = ai_metadata.get("key_metrics_summary", {})
-    if key_metrics:
-        formatted["technical_indicators"] = {
-            "latest_price": format_currency(key_metrics.get("latest_price", 0)),
-            "latest_volume": format_number(key_metrics.get("latest_volume", 0)),
-            "price_change_period": format_currency(key_metrics.get("price_change_period", 0)),
-            "price_change_percent": format_percentage(key_metrics.get("price_change_percent", 0)),
-            "max_price": format_currency(key_metrics.get("max_price", 0)),
-            "min_price": format_currency(key_metrics.get("min_price", 0))
+    # Format current price data
+    if "current_price" in data:
+        current = data["current_price"]
+        formatted["current_price"] = {
+            "price": format_currency(current.get("price", 0)),
+            "change": format_currency(current.get("change", 0)),
+            "change_percent": format_percentage(current.get("change_percent", 0)),
+            "volume": format_number(current.get("volume", 0)),
+            "high": format_currency(current.get("high", 0)),
+            "low": format_currency(current.get("low", 0)),
+            "open": format_currency(current.get("open", 0)),
+            "previous_close": format_currency(current.get("previous_close", 0))
+        }
+    
+    # Format financial highlights
+    if "financial_highlights" in data:
+        financial = data["financial_highlights"]
+        formatted["financial_highlights"] = {
+            "revenue": format_currency(financial.get("revenue", 0)),
+            "net_income": format_currency(financial.get("net_income", 0)),
+            "total_assets": format_currency(financial.get("total_assets", 0)),
+            "total_liabilities": format_currency(financial.get("total_liabilities", 0)),
+            "equity": format_currency(financial.get("equity", 0)),
+            "debt_to_equity": format_percentage(financial.get("debt_to_equity", 0)),
+            "roe": format_percentage(financial.get("roe", 0)),
+            "roa": format_percentage(financial.get("roa", 0)),
+            "pe_ratio": f"{financial.get('pe_ratio', 0):.2f}",
+            "pb_ratio": f"{financial.get('pb_ratio', 0):.2f}"
+        }
+    
+    # Format historical summary
+    if "historical_summary" in data:
+        historical = data["historical_summary"]
+        formatted["historical_summary"] = {
+            "period": historical.get("period", "N/A"),
+            "total_records": format_number(historical.get("total_records", 0)),
+            "avg_volume": format_number(historical.get("avg_volume", 0)),
+            "max_price": format_currency(historical.get("max_price", 0)),
+            "min_price": format_currency(historical.get("min_price", 0)),
+            "volatility": format_percentage(historical.get("volatility", 0))
         }
     
     return formatted
