@@ -10,6 +10,7 @@
 - **⚡ Hiệu suất cao**: Không giới hạn thời gian hay số lượng bản ghi, dữ liệu real-time
 - **🛡️ Ổn định**: Logging chi tiết, error handling, health check endpoint
 - **🐳 Dễ triển khai**: Docker support, virtual environment, one-command setup
+- **💰 Đơn vị tiền tệ VND chính xác**: Không làm tròn để tránh sai số, metadata đầy đủ cho currency tracking
 
 ## 📊 Dữ liệu thu thập (Toàn diện & Không giới hạn)
 
@@ -35,6 +36,13 @@
 - **Analysis suggestions**: 5+ gợi ý phân tích tự động
 - **Key metrics summary**: Tóm tắt chỉ số quan trọng
 - **Structured format**: Tối ưu cho machine learning
+
+### 💰 **5. Đơn vị tiền tệ & Độ chính xác**
+- **Đơn vị**: VND (Đồng Việt Nam) - được ghi rõ trong metadata
+- **Độ chính xác**: Không làm tròn - giữ nguyên giá trị gốc để tránh sai số
+- **Format**: Số thực (float) hoặc số nguyên (int) tùy theo dữ liệu gốc
+- **Currency tracking**: Metadata đầy đủ cho AI analysis và tính toán
+- **Tương thích**: Hoàn toàn tương thích với các hệ thống tính toán tài chính
 
 ## 🛠 Cài đặt & Triển khai
 

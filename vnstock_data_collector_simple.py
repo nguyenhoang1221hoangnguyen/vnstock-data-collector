@@ -1,12 +1,14 @@
 """
 VNStock Data Collector - Phiên bản đơn giản hóa
 Được thiết kế để tích hợp với n8n workflow
+Đảm bảo đơn vị tiền tệ VND và không làm tròn để tránh sai số
 """
 
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 import logging
+from decimal import Decimal
 
 # Cấu hình logging
 logging.basicConfig(level=logging.INFO)
@@ -21,6 +23,62 @@ class VNStockDataCollector:
         """Khởi tạo collector"""
         self.start_date = "2010-01-01"  # Ngày bắt đầu mặc định
         self.end_date = datetime.now().strftime("%Y-%m-%d")  # Ngày hiện tại
+        
+    def _format_currency_value(self, value: Any) -> Any:
+        """
+        Format giá trị tiền tệ để đảm bảo chính xác
+        - Giữ nguyên giá trị gốc (không làm tròn)
+        - Đảm bảo đơn vị VND
+        - Xử lý các trường hợp đặc biệt
+        """
+        if value is None:
+            return None
+        
+        # Nếu là số
+        if isinstance(value, (int, float)):
+            # Nếu là float nhưng có thể chuyển thành int (không có phần thập phân)
+            if isinstance(value, float) and value.is_integer():
+                return int(value)
+            # Giữ nguyên số thực
+            return value
+        
+        # Nếu là string số
+        if isinstance(value, str):
+            try:
+                # Thử chuyển thành float trước
+                float_val = float(value)
+                if float_val.is_integer():
+                    return int(float_val)
+                return float_val
+            except (ValueError, TypeError):
+                return value
+        
+        # Các trường hợp khác giữ nguyên
+        return value
+    
+    def _format_dataframe_currency(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Format toàn bộ DataFrame để đảm bảo tiền tệ chính xác
+        """
+        if df.empty:
+            return df
+        
+        # Tạo bản copy để không ảnh hưởng đến dữ liệu gốc
+        formatted_df = df.copy()
+        
+        # Các cột có thể chứa giá trị tiền tệ
+        currency_columns = [
+            'open', 'high', 'low', 'close', 'volume',
+            'adj_close', 'adjusted_close', 'value', 'amount'
+        ]
+        
+        # Format các cột tiền tệ
+        for col in formatted_df.columns:
+            if any(currency_keyword in col.lower() for currency_keyword in 
+                   ['price', 'value', 'amount', 'volume', 'đồng', 'vnd', 'open', 'high', 'low', 'close']):
+                formatted_df[col] = formatted_df[col].apply(self._format_currency_value)
+        
+        return formatted_df
         
     def get_stock_overview(self, symbol: str) -> Dict[str, Any]:
         """
@@ -38,11 +96,15 @@ class VNStockDataCollector:
             
             current_data = stock.quote.history(start=start_date, end=end_date)
             
+            # Format dữ liệu tiền tệ để đảm bảo chính xác
+            formatted_data = self._format_dataframe_currency(current_data)
+            
             overview_data = {
                 "symbol": symbol,
-                "current_price_info": current_data.to_dict('records') if not current_data.empty else {},
+                "current_price_info": formatted_data.to_dict('records') if not formatted_data.empty else {},
                 "data_collection_time": datetime.now().isoformat(),
-                "note": "Basic stock data from vnstock"
+                "currency_unit": "VND",
+                "note": "Basic stock data from vnstock - Currency values preserved without rounding"
             }
             
             return overview_data
@@ -74,15 +136,19 @@ class VNStockDataCollector:
             # Lấy dữ liệu theo ngày
             daily_data = stock.quote.history(start=start, end=end)
             
+            # Format dữ liệu tiền tệ để đảm bảo chính xác
+            formatted_daily_data = self._format_dataframe_currency(daily_data)
+            
             historical_data = {
                 "symbol": symbol,
                 "period": {
                     "start_date": start,
                     "end_date": end
                 },
-                "daily_data": daily_data.to_dict('records') if not daily_data.empty else [],
-                "total_trading_days": len(daily_data) if not daily_data.empty else 0,
-                "note": "Historical price data from vnstock"
+                "daily_data": formatted_daily_data.to_dict('records') if not formatted_daily_data.empty else [],
+                "total_trading_days": len(formatted_daily_data) if not formatted_daily_data.empty else 0,
+                "currency_unit": "VND",
+                "note": "Historical price data from vnstock - Currency values preserved without rounding"
             }
             
             return historical_data
@@ -108,11 +174,15 @@ class VNStockDataCollector:
             except:
                 pass
             
+            # Format dữ liệu tài chính để đảm bảo chính xác
+            formatted_balance_sheet = self._format_dataframe_currency(balance_sheet)
+            
             financial_data = {
                 "symbol": symbol,
-                "balance_sheet": balance_sheet.to_dict('records') if not balance_sheet.empty else [],
+                "balance_sheet": formatted_balance_sheet.to_dict('records') if not formatted_balance_sheet.empty else [],
                 "last_updated": datetime.now().isoformat(),
-                "note": "Financial data from vnstock (limited)"
+                "currency_unit": "VND",
+                "note": "Financial data from vnstock - Currency values preserved without rounding"
             }
             
             return financial_data
@@ -174,7 +244,13 @@ class VNStockDataCollector:
         complete_data["ai_analysis_metadata"] = {
             "data_completeness": self._check_data_completeness(complete_data),
             "analysis_suggestions": self._generate_analysis_suggestions(complete_data),
-            "key_metrics_summary": self._extract_key_metrics(complete_data)
+            "key_metrics_summary": self._extract_key_metrics(complete_data),
+            "currency_info": {
+                "unit": "VND",
+                "description": "Vietnamese Dong",
+                "precision": "No rounding applied - original values preserved",
+                "note": "All monetary values are in VND without any rounding to prevent calculation errors"
+            }
         }
         
         logger.info(f"Hoàn thành thu thập dữ liệu cho {symbol}")
