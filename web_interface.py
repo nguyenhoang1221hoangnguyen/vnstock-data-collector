@@ -1,526 +1,258 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 VNStock Data Collector - Web Interface
 Giao diện web đẹp mắt để tra cứu thông tin cổ phiếu
 """
 
-import streamlit as st
-import requests
-import pandas as pd
-import plotly.graph_objects as go
-import plotly.express as px
-from datetime import datetime, timedelta
+from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+import uvicorn
 import json
-import time
+import logging
+from typing import Optional, List, Dict, Any
+import pandas as pd
+from datetime import datetime, timedelta
+import os
 
-# Cấu hình trang
-st.set_page_config(
-    page_title="VNStock Data Collector",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
+# Import data collector
+from vnstock_data_collector_simple import VNStockDataCollector
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Initialize FastAPI app
+app = FastAPI(
+    title="VNStock Data Collector - Web Interface",
+    description="Giao diện web tra cứu thông tin cổ phiếu Việt Nam",
+    version="1.0.0"
 )
 
-# CSS tùy chỉnh
-st.markdown("""
-<style>
-    .main-header {
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-        padding: 2rem;
-        border-radius: 10px;
-        color: white;
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-    
-    .metric-card {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        border-left: 4px solid #667eea;
-        margin-bottom: 1rem;
-    }
-    
-    .success-metric {
-        border-left-color: #28a745;
-    }
-    
-    .warning-metric {
-        border-left-color: #ffc107;
-    }
-    
-    .danger-metric {
-        border-left-color: #dc3545;
-    }
-    
-    .info-metric {
-        border-left-color: #17a2b8;
-    }
-    
-    .search-container {
-        background: #f8f9fa;
-        padding: 2rem;
-        border-radius: 10px;
-        margin-bottom: 2rem;
-    }
-    
-    .company-info {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 2rem;
-        border-radius: 10px;
-        margin-bottom: 2rem;
-    }
-    
-    .chart-container {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        margin-bottom: 2rem;
-    }
-    
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 2px;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        white-space: pre-wrap;
-        background-color: #f0f2f6;
-        border-radius: 4px 4px 0px 0px;
-        gap: 1px;
-        padding-left: 20px;
-        padding-right: 20px;
-    }
-    
-    .stTabs [aria-selected="true"] {
-        background-color: #667eea;
-        color: white;
-    }
-</style>
-""", unsafe_allow_html=True)
+# Initialize data collector
+data_collector = VNStockDataCollector()
 
-# Danh sách mã cổ phiếu phổ biến
-POPULAR_STOCKS = {
-    "VIC": "Vingroup",
-    "VCB": "Vietcombank", 
+# Setup templates
+templates = Jinja2Templates(directory="templates")
+
+# Create templates directory if not exists
+os.makedirs("templates", exist_ok=True)
+os.makedirs("static", exist_ok=True)
+
+# Sample company data for autocomplete (you can expand this)
+COMPANY_SYMBOLS = {
+    "VIC": "Tập đoàn Vingroup",
+    "VCB": "Ngân hàng TMCP Ngoại thương Việt Nam",
     "VHM": "Vinhomes",
-    "HPG": "Hoa Phat Group",
-    "MSN": "Masan Group",
+    "HPG": "Tập đoàn Hòa Phát",
+    "MSN": "Tập đoàn Masan",
     "VRE": "Vincom Retail",
-    "GAS": "PetroVietnam Gas",
-    "VNM": "Vinamilk",
-    "BID": "BIDV",
-    "CTG": "VietinBank",
-    "FPT": "FPT Corporation",
-    "MWG": "Mobile World",
-    "PLX": "Petrolimex",
-    "POW": "PetroVietnam Power",
-    "SSI": "SSI Securities",
-    "TCB": "Techcombank",
-    "VGC": "Viglacera",
-    "VJC": "VietJet Air",
-    "VND": "VNDirect Securities",
-    "VPB": "VPBank"
+    "GAS": "Tổng Công ty Khí Việt Nam",
+    "PLX": "Tập đoàn Xăng dầu Việt Nam",
+    "MWG": "Công ty Cổ phần Đầu tư Thế giới Di động",
+    "FPT": "Tập đoàn FPT",
+    "CTG": "Ngân hàng TMCP Công thương Việt Nam",
+    "BID": "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam",
+    "TCB": "Ngân hàng TMCP Kỹ thương Việt Nam",
+    "ACB": "Ngân hàng TMCP Á Châu",
+    "VNM": "Công ty Cổ phần Sữa Việt Nam",
+    "SAB": "Tổng Công ty Cổ phần Bia - Rượu - Nước giải khát Sài Gòn",
+    "VJC": "Công ty Cổ phần Hàng không VietJet",
+    "PNJ": "Công ty Cổ phần Vàng bạc Đá quý Phú Nhuận",
+    "REE": "Công ty Cổ phần Refrigeration Electrical Engineering",
+    "SSI": "Công ty Cổ phần Chứng khoán SSI"
 }
 
-def format_currency(value, unit="VND"):
-    """Format số tiền với đơn vị VND"""
+def format_currency(value: float, currency: str = "VND") -> str:
+    """Format currency with Vietnamese locale"""
     if pd.isna(value) or value is None:
         return "N/A"
     
-    try:
-        if abs(value) >= 1e12:  # Nghìn tỷ
-            return f"{value/1e12:.2f} nghìn tỷ {unit}"
-        elif abs(value) >= 1e9:  # Tỷ
-            return f"{value/1e9:.2f} tỷ {unit}"
-        elif abs(value) >= 1e6:  # Triệu
-            return f"{value/1e6:.2f} triệu {unit}"
-        elif abs(value) >= 1e3:  # Nghìn
-            return f"{value/1e3:.2f} nghìn {unit}"
-        else:
-            return f"{value:,.0f} {unit}"
-    except:
-        return "N/A"
+    if currency == "VND":
+        return f"{value:,.0f} VND"
+    else:
+        return f"{value:,.2f} {currency}"
 
-def format_percentage(value):
-    """Format phần trăm"""
+def format_percentage(value: float) -> str:
+    """Format percentage"""
     if pd.isna(value) or value is None:
         return "N/A"
-    try:
-        return f"{value:.2f}%"
-    except:
-        return "N/A"
+    return f"{value:.2f}%"
 
-def search_stocks(query):
-    """Tìm kiếm mã cổ phiếu"""
+def format_number(value: float) -> str:
+    """Format large numbers"""
+    if pd.isna(value) or value is None:
+        return "N/A"
+    
+    if abs(value) >= 1e12:
+        return f"{value/1e12:.2f}T"
+    elif abs(value) >= 1e9:
+        return f"{value/1e9:.2f}B"
+    elif abs(value) >= 1e6:
+        return f"{value/1e6:.2f}M"
+    elif abs(value) >= 1e3:
+        return f"{value/1e3:.2f}K"
+    else:
+        return f"{value:,.0f}"
+
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+    """Home page with search interface"""
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "company_symbols": COMPANY_SYMBOLS
+    })
+
+@app.get("/api/search")
+async def search_companies(query: str = ""):
+    """API endpoint for company search autocomplete"""
     if not query:
-        return []
+        return {"suggestions": []}
     
     query = query.upper()
-    results = []
+    suggestions = []
     
-    # Tìm kiếm theo mã
-    for code, name in POPULAR_STOCKS.items():
-        if query in code or query in name.upper():
-            results.append({"code": code, "name": name})
+    for symbol, name in COMPANY_SYMBOLS.items():
+        if query in symbol or query in name.upper():
+            suggestions.append({
+                "symbol": symbol,
+                "name": name,
+                "display": f"{symbol} - {name}"
+            })
     
-    return results[:10]  # Giới hạn 10 kết quả
+    return {"suggestions": suggestions[:10]}  # Limit to 10 suggestions
 
-def get_stock_data(symbol):
-    """Lấy dữ liệu cổ phiếu từ API"""
+@app.post("/api/analyze")
+async def analyze_stock(symbol: str = Form(...)):
+    """Analyze stock data and return formatted results"""
     try:
-        url = "http://localhost:8501/api/v1/stock/batch"
-        payload = {"symbol": symbol}
+        symbol = symbol.upper().strip()
         
-        with st.spinner(f"Đang tải dữ liệu cho {symbol}..."):
-            response = requests.post(url, json=payload, timeout=30)
-            
-        if response.status_code == 200:
-            return response.json()
-        else:
-            st.error(f"Lỗi API: {response.status_code}")
-            return None
-    except requests.exceptions.ConnectionError:
-        st.error("❌ Không thể kết nối đến API. Vui lòng đảm bảo server đang chạy tại http://localhost:8501")
-        return None
+        # Get comprehensive data
+        logger.info(f"Analyzing stock: {symbol}")
+        data = data_collector.get_complete_stock_data(symbol)
+        
+        if not data or data.get("error"):
+            raise HTTPException(status_code=404, detail=f"Không tìm thấy dữ liệu cho mã cổ phiếu: {symbol}")
+        
+        # Format data for display
+        formatted_data = format_stock_data(data)
+        
+        return JSONResponse(content=formatted_data)
+        
     except Exception as e:
-        st.error(f"Lỗi: {str(e)}")
-        return None
+        logger.error(f"Error analyzing stock {symbol}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Lỗi khi phân tích cổ phiếu: {str(e)}")
 
-def create_price_chart(historical_data):
-    """Tạo biểu đồ giá cổ phiếu"""
-    if not historical_data or 'data' not in historical_data:
-        return None
+def format_stock_data(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Format stock data for web display"""
+    request_info = data.get("request_info", {})
+    overview = data.get("overview", {})
+    historical_data = data.get("historical_data", {})
+    financial_data = data.get("financial_data", {})
+    market_data = data.get("market_data", {})
+    ai_metadata = data.get("ai_analysis_metadata", {})
     
-    df = pd.DataFrame(historical_data['data'])
-    df['date'] = pd.to_datetime(df['date'])
-    df = df.sort_values('date')
+    formatted = {
+        "symbol": request_info.get("symbol", ""),
+        "timestamp": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+        "overview": {},
+        "current_price": {},
+        "historical_summary": {},
+        "financial_highlights": {},
+        "technical_indicators": {},
+        "company_info": {},
+        "market_data": {}
+    }
     
-    fig = go.Figure()
+    # Format overview data - extract from current_price_info
+    if "current_price_info" in overview and overview["current_price_info"]:
+        current_info = overview["current_price_info"]
+        if isinstance(current_info, list) and len(current_info) > 0:
+            latest = current_info[-1]  # Get latest record
+            formatted["overview"] = {
+                "company_name": f"Công ty {request_info.get('symbol', 'N/A')}",
+                "sector": "N/A",
+                "industry": "N/A", 
+                "market_cap": "N/A",
+                "shares_outstanding": "N/A",
+                "listing_date": "N/A"
+            }
+            
+            # Format current price data from historical data
+            formatted["current_price"] = {
+                "price": format_currency(latest.get("close", 0)),
+                "change": format_currency(latest.get("change", 0)),
+                "change_percent": format_percentage(latest.get("change_percent", 0)),
+                "volume": format_number(latest.get("volume", 0)),
+                "high": format_currency(latest.get("high", 0)),
+                "low": format_currency(latest.get("low", 0)),
+                "open": format_currency(latest.get("open", 0)),
+                "previous_close": format_currency(latest.get("close", 0))
+            }
     
-    # Biểu đồ nến
-    fig.add_trace(go.Candlestick(
-        x=df['date'],
-        open=df['open'],
-        high=df['high'],
-        low=df['low'],
-        close=df['close'],
-        name="Giá cổ phiếu"
-    ))
+    # Format historical summary
+    if "daily_data" in historical_data and historical_data["daily_data"]:
+        daily_data = historical_data["daily_data"]
+        if daily_data:
+            prices = [day.get("close", 0) for day in daily_data if day.get("close")]
+            volumes = [day.get("volume", 0) for day in daily_data if day.get("volume")]
+            
+            formatted["historical_summary"] = {
+                "period": f"{historical_data.get('period', {}).get('start_date', 'N/A')} - {historical_data.get('period', {}).get('end_date', 'N/A')}",
+                "total_records": format_number(len(daily_data)),
+                "avg_volume": format_number(sum(volumes) / len(volumes) if volumes else 0),
+                "max_price": format_currency(max(prices) if prices else 0),
+                "min_price": format_currency(min(prices) if prices else 0),
+                "volatility": format_percentage(ai_metadata.get("key_metrics_summary", {}).get("price_change_percent", 0))
+            }
     
-    # Đường trung bình 20 ngày
-    df['ma20'] = df['close'].rolling(window=20).mean()
-    fig.add_trace(go.Scatter(
-        x=df['date'],
-        y=df['ma20'],
-        mode='lines',
-        name='MA20',
-        line=dict(color='orange', width=2)
-    ))
+    # Format financial highlights - basic info from financial_data
+    if "balance_sheet" in financial_data:
+        formatted["financial_highlights"] = {
+            "revenue": "N/A",
+            "net_income": "N/A", 
+            "total_assets": "N/A",
+            "total_liabilities": "N/A",
+            "equity": "N/A",
+            "debt_to_equity": "N/A",
+            "roe": "N/A",
+            "roa": "N/A",
+            "pe_ratio": "N/A",
+            "pb_ratio": "N/A"
+        }
     
-    fig.update_layout(
-        title="Biểu đồ giá cổ phiếu",
-        xaxis_title="Ngày",
-        yaxis_title="Giá (VND)",
-        template="plotly_white",
-        height=500
-    )
+    # Add key metrics from AI metadata
+    key_metrics = ai_metadata.get("key_metrics_summary", {})
+    if key_metrics:
+        formatted["technical_indicators"] = {
+            "latest_price": format_currency(key_metrics.get("latest_price", 0)),
+            "latest_volume": format_number(key_metrics.get("latest_volume", 0)),
+            "price_change_period": format_currency(key_metrics.get("price_change_period", 0)),
+            "price_change_percent": format_percentage(key_metrics.get("price_change_percent", 0)),
+            "max_price": format_currency(key_metrics.get("max_price", 0)),
+            "min_price": format_currency(key_metrics.get("min_price", 0))
+        }
     
-    return fig
+    return formatted
 
-def create_volume_chart(historical_data):
-    """Tạo biểu đồ khối lượng giao dịch"""
-    if not historical_data or 'data' not in historical_data:
-        return None
-    
-    df = pd.DataFrame(historical_data['data'])
-    df['date'] = pd.to_datetime(df['date'])
-    df = df.sort_values('date')
-    
-    fig = go.Figure()
-    
-    fig.add_trace(go.Bar(
-        x=df['date'],
-        y=df['volume'],
-        name="Khối lượng",
-        marker_color='lightblue'
-    ))
-    
-    fig.update_layout(
-        title="Khối lượng giao dịch",
-        xaxis_title="Ngày",
-        yaxis_title="Khối lượng",
-        template="plotly_white",
-        height=400
-    )
-    
-    return fig
-
-def main():
-    # Header
-    st.markdown("""
-    <div class="main-header">
-        <h1>📊 VNStock Data Collector</h1>
-        <p>Tra cứu thông tin cổ phiếu Việt Nam - Dữ liệu toàn diện và chính xác</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Sidebar
-    with st.sidebar:
-        st.markdown("### 🔍 Tìm kiếm cổ phiếu")
-        
-        # Tìm kiếm
-        search_query = st.text_input(
-            "Nhập mã cổ phiếu hoặc tên công ty:",
-            placeholder="VD: VIC, Vingroup, VCB..."
-        )
-        
-        # Gợi ý
-        if search_query:
-            suggestions = search_stocks(search_query)
-            if suggestions:
-                st.markdown("**💡 Gợi ý:**")
-                for suggestion in suggestions:
-                    if st.button(f"{suggestion['code']} - {suggestion['name']}", key=f"suggest_{suggestion['code']}"):
-                        st.session_state.selected_symbol = suggestion['code']
-                        st.rerun()
-        
-        # Danh sách cổ phiếu phổ biến
-        st.markdown("### 📈 Cổ phiếu phổ biến")
-        for code, name in list(POPULAR_STOCKS.items())[:10]:
-            if st.button(f"{code} - {name}", key=f"popular_{code}"):
-                st.session_state.selected_symbol = code
-                st.rerun()
-        
-        # Thông tin API
-        st.markdown("### ℹ️ Thông tin")
-        st.info("""
-        **API Status:** 
-        - Endpoint: http://localhost:8501
-        - Dữ liệu: 15+ năm lịch sử
-        - Cập nhật: Real-time
-        """)
-    
-    # Main content
-    if 'selected_symbol' in st.session_state:
-        symbol = st.session_state.selected_symbol
-    else:
-        symbol = None
-    
-    if not symbol:
-        st.markdown("""
-        <div class="search-container">
-            <h2>🎯 Chọn cổ phiếu để bắt đầu</h2>
-            <p>Nhập mã cổ phiếu hoặc tên công ty vào ô tìm kiếm bên trái, hoặc chọn từ danh sách cổ phiếu phổ biến.</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Hiển thị danh sách cổ phiếu
-        st.markdown("### 📊 Danh sách cổ phiếu phổ biến")
-        cols = st.columns(4)
-        for i, (code, name) in enumerate(POPULAR_STOCKS.items()):
-            with cols[i % 4]:
-                if st.button(f"**{code}**\n{name}", key=f"list_{code}"):
-                    st.session_state.selected_symbol = code
-                    st.rerun()
-        return
-    
-    # Lấy dữ liệu
-    data = get_stock_data(symbol)
-    
-    if not data:
-        st.error("Không thể tải dữ liệu. Vui lòng thử lại.")
-        return
-    
-    # Hiển thị thông tin công ty
-    if 'overview' in data and data['overview']:
-        overview = data['overview']
-        st.markdown(f"""
-        <div class="company-info">
-            <h2>🏢 {overview.get('company_name', symbol)}</h2>
-            <p><strong>Mã cổ phiếu:</strong> {symbol}</p>
-            <p><strong>Ngành:</strong> {overview.get('industry', 'N/A')}</p>
-            <p><strong>Sàn giao dịch:</strong> {overview.get('exchange', 'N/A')}</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Tabs cho các loại dữ liệu
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "📊 Tổng quan", 
-        "📈 Biểu đồ giá", 
-        "💰 Tài chính", 
-        "📋 Báo cáo", 
-        "📊 Phân tích"
-    ])
-    
-    with tab1:
-        st.markdown("### 📊 Thông tin tổng quan")
-        
-        # Thông tin giá hiện tại
-        if 'overview' in data and data['overview']:
-            overview = data['overview']
-            
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                current_price = overview.get('current_price', 0)
-                change = overview.get('change', 0)
-                change_percent = overview.get('change_percent', 0)
-                
-                st.metric(
-                    "Giá hiện tại",
-                    format_currency(current_price),
-                    f"{change:+.0f} ({change_percent:+.2f}%)"
-                )
-            
-            with col2:
-                st.metric(
-                    "Vốn hóa thị trường",
-                    format_currency(overview.get('market_cap', 0))
-                )
-            
-            with col3:
-                st.metric(
-                    "Khối lượng giao dịch",
-                    format_currency(overview.get('volume', 0))
-                )
-            
-            with col4:
-                st.metric(
-                    "P/E Ratio",
-                    f"{overview.get('pe_ratio', 0):.2f}"
-                )
-        
-        # Thông tin tài chính cơ bản
-        if 'financial_data' in data and data['financial_data']:
-            st.markdown("### 💰 Chỉ số tài chính")
-            
-            financial = data['financial_data']
-            
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                st.metric(
-                    "Doanh thu",
-                    format_currency(financial.get('revenue', 0))
-                )
-            
-            with col2:
-                st.metric(
-                    "Lợi nhuận",
-                    format_currency(financial.get('net_income', 0))
-                )
-            
-            with col3:
-                st.metric(
-                    "Tổng tài sản",
-                    format_currency(financial.get('total_assets', 0))
-                )
-            
-            with col4:
-                st.metric(
-                    "Tổng nợ",
-                    format_currency(financial.get('total_debt', 0))
-                )
-    
-    with tab2:
-        st.markdown("### 📈 Biểu đồ giá cổ phiếu")
-        
-        if 'historical_data' in data and data['historical_data']:
-            # Biểu đồ giá
-            price_chart = create_price_chart(data['historical_data'])
-            if price_chart:
-                st.plotly_chart(price_chart, use_container_width=True)
-            
-            # Biểu đồ khối lượng
-            volume_chart = create_volume_chart(data['historical_data'])
-            if volume_chart:
-                st.plotly_chart(volume_chart, use_container_width=True)
-        else:
-            st.warning("Không có dữ liệu biểu đồ")
-    
-    with tab3:
-        st.markdown("### 💰 Dữ liệu tài chính chi tiết")
-        
-        if 'financial_data' in data and data['financial_data']:
-            financial = data['financial_data']
-            
-            # Bảng cân đối kế toán
-            if 'balance_sheet' in financial:
-                st.markdown("#### 📋 Bảng cân đối kế toán")
-                balance_df = pd.DataFrame(financial['balance_sheet'])
-                st.dataframe(balance_df, use_container_width=True)
-            
-            # Báo cáo kết quả kinh doanh
-            if 'income_statement' in financial:
-                st.markdown("#### 📊 Báo cáo kết quả kinh doanh")
-                income_df = pd.DataFrame(financial['income_statement'])
-                st.dataframe(income_df, use_container_width=True)
-            
-            # Báo cáo lưu chuyển tiền tệ
-            if 'cash_flow' in financial:
-                st.markdown("#### 💸 Báo cáo lưu chuyển tiền tệ")
-                cashflow_df = pd.DataFrame(financial['cash_flow'])
-                st.dataframe(cashflow_df, use_container_width=True)
-        else:
-            st.warning("Không có dữ liệu tài chính")
-    
-    with tab4:
-        st.markdown("### 📋 Dữ liệu lịch sử")
-        
-        if 'historical_data' in data and data['historical_data']:
-            hist_data = data['historical_data']
-            
-            if 'data' in hist_data:
-                df = pd.DataFrame(hist_data['data'])
-                df['date'] = pd.to_datetime(df['date'])
-                df = df.sort_values('date', ascending=False)
-                
-                # Hiển thị 100 bản ghi gần nhất
-                st.dataframe(df.head(100), use_container_width=True)
-            else:
-                st.warning("Không có dữ liệu lịch sử")
-        else:
-            st.warning("Không có dữ liệu lịch sử")
-    
-    with tab5:
-        st.markdown("### 📊 Phân tích và đánh giá")
-        
-        # Thông tin metadata
-        if 'metadata' in data:
-            metadata = data['metadata']
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown("#### 📈 Thống kê dữ liệu")
-                st.info(f"""
-                - **Số bản ghi lịch sử:** {metadata.get('total_records', 0):,}
-                - **Khoảng thời gian:** {metadata.get('date_range', 'N/A')}
-                - **Thời gian cập nhật:** {metadata.get('last_updated', 'N/A')}
-                - **Nguồn dữ liệu:** {metadata.get('data_source', 'N/A')}
-                """)
-            
-            with col2:
-                st.markdown("#### ⚡ Hiệu suất API")
-                st.info(f"""
-                - **Thời gian xử lý:** {metadata.get('processing_time', 0):.2f}s
-                - **Trạng thái:** {metadata.get('status', 'N/A')}
-                - **Phiên bản API:** {metadata.get('api_version', 'N/A')}
-                """)
-        
-        # Gợi ý phân tích
-        st.markdown("#### 🤖 Gợi ý phân tích AI")
-        st.success("""
-        **Dữ liệu đã sẵn sàng cho phân tích AI:**
-        - ✅ Dữ liệu lịch sử đầy đủ (15+ năm)
-        - ✅ Báo cáo tài chính chi tiết
-        - ✅ Cấu trúc JSON chuẩn hóa
-        - ✅ Metadata đầy đủ
-        - ✅ Định dạng thân thiện với AI
-        """)
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
 if __name__ == "__main__":
-    main()
+    print("🚀 Đang khởi chạy VNStock Web Interface...")
+    print("📊 Giao diện web sẽ chạy tại: http://localhost:8502")
+    print("🔍 API Documentation: http://localhost:8502/docs")
+    print("=" * 50)
+    
+    uvicorn.run(
+        "web_interface:app",
+        host="0.0.0.0",
+        port=8502,
+        reload=True,
+        log_level="info"
+    )

@@ -1,74 +1,41 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 VNStock Data Collector - Web Interface Launcher
-Script để khởi chạy giao diện web Streamlit
+Script khởi chạy giao diện web
 """
 
-import subprocess
+import uvicorn
 import sys
 import os
-import time
 
-def check_dependencies():
-    """Kiểm tra các thư viện cần thiết"""
-    required_packages = ['streamlit', 'plotly']
-    missing_packages = []
-    
-    for package in required_packages:
-        try:
-            __import__(package)
-        except ImportError:
-            missing_packages.append(package)
-    
-    if missing_packages:
-        print(f"❌ Thiếu các thư viện: {', '.join(missing_packages)}")
-        print("🔧 Đang cài đặt...")
-        
-        for package in missing_packages:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', package])
-        
-        print("✅ Đã cài đặt xong các thư viện!")
-    
-    return len(missing_packages) == 0
-
-def start_web_interface():
-    """Khởi chạy giao diện web"""
-    print("🚀 Đang khởi chạy VNStock Data Collector Web Interface...")
-    print("📊 Giao diện web sẽ mở tại: http://localhost:8502")
-    print("🔍 Đảm bảo API server đang chạy tại: http://localhost:8501")
+def main():
+    print("🚀 Đang khởi chạy VNStock Web Interface...")
+    print("📊 Giao diện web sẽ chạy tại: http://localhost:8502")
+    print("🔍 API Documentation: http://localhost:8502/docs")
+    print("🏠 Trang chủ: http://localhost:8502")
+    print("=" * 60)
+    print("✨ Tính năng:")
+    print("   • Tìm kiếm thông minh với gợi ý")
+    print("   • Hiển thị đầy đủ thông tin tài chính")
+    print("   • Giao diện đẹp mắt, thân thiện")
+    print("   • Đơn vị tiền tệ VND")
+    print("   • Responsive design")
     print("=" * 60)
     
     try:
-        # Chạy Streamlit
-        subprocess.run([
-            sys.executable, '-m', 'streamlit', 'run', 
-            'web_interface.py',
-            '--server.port=8502',
-            '--server.address=0.0.0.0',
-            '--browser.gatherUsageStats=false'
-        ])
+        uvicorn.run(
+            "web_interface:app",
+            host="0.0.0.0",
+            port=8502,
+            reload=True,
+            log_level="info"
+        )
     except KeyboardInterrupt:
-        print("\n👋 Đã dừng giao diện web!")
+        print("\n👋 Đã dừng VNStock Web Interface!")
     except Exception as e:
-        print(f"❌ Lỗi khi khởi chạy: {e}")
-
-def main():
-    """Hàm chính"""
-    print("🎯 VNStock Data Collector - Web Interface")
-    print("=" * 50)
-    
-    # Kiểm tra file web_interface.py
-    if not os.path.exists('web_interface.py'):
-        print("❌ Không tìm thấy file web_interface.py")
-        return
-    
-    # Kiểm tra dependencies
-    if not check_dependencies():
-        print("❌ Không thể cài đặt dependencies")
-        return
-    
-    # Khởi chạy
-    start_web_interface()
+        print(f"❌ Lỗi khởi chạy: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

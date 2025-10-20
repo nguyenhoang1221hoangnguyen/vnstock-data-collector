@@ -4,6 +4,7 @@
 
 ## 🚀 Tính năng chính
 
+- **🌐 Giao diện web đẹp mắt**: Tìm kiếm thông minh, hiển thị đầy đủ thông tin với đơn vị VND
 - **📊 Thu thập dữ liệu toàn diện**: 15+ năm dữ liệu lịch sử (3,940+ bản ghi) + 17+ năm báo cáo tài chính (51 báo cáo)
 - **🔗 API RESTful hoàn chỉnh**: Tích hợp dễ dàng với n8n, AI agents và các hệ thống khác
 - **🤖 Tối ưu cho AI**: Cấu trúc JSON rõ ràng, metadata phong phú, gợi ý phân tích tự động
@@ -48,7 +49,10 @@ cd vnstock-data-collector
 # Chạy setup tự động
 python setup.py
 
-# Khởi chạy server
+# Khởi chạy giao diện web (khuyến nghị)
+python start_web_interface.py
+
+# Hoặc khởi chạy API server
 python start_server.py
 ```
 
@@ -63,7 +67,10 @@ source venv/bin/activate  # Linux/Mac
 # Cài đặt dependencies
 pip install -r requirements.txt
 
-# Khởi chạy server
+# Khởi chạy giao diện web (khuyến nghị)
+python start_web_interface.py
+
+# Hoặc khởi chạy API server
 python start_server.py
 ```
 
@@ -74,7 +81,8 @@ docker build -t vnstock-collector .
 docker run -p 8501:8501 vnstock-collector
 ```
 
-**Server sẽ chạy tại**: `http://localhost:8501`
+**Giao diện web**: `http://localhost:8502` (khuyến nghị)
+**API server**: `http://localhost:8501`
 
 ## 📖 API Documentation
 
@@ -317,30 +325,6 @@ Các lỗi thường gặp:
 - Lỗi kết nối đến nguồn dữ liệu
 - Thiếu dữ liệu cho khoảng thời gian yêu cầu
 
-## 🖥️ Giao diện Web
-
-### Khởi chạy giao diện web
-```bash
-# Đảm bảo API server đang chạy (port 8501)
-python start_server.py
-
-# Trong terminal khác, khởi chạy web interface
-python start_web_interface.py
-```
-
-### Tính năng giao diện web
-- 🔍 **Tìm kiếm thông minh**: Nhập mã cổ phiếu hoặc tên công ty
-- 💡 **Gợi ý tự động**: Hệ thống gợi ý tên công ty chính xác
-- 📊 **Biểu đồ tương tác**: Biểu đồ nến, khối lượng giao dịch
-- 💰 **Hiển thị VND**: Tất cả số liệu tài chính với đơn vị VND
-- 📱 **Responsive**: Tương thích mọi thiết bị
-- 🎨 **Giao diện đẹp**: Thiết kế hiện đại, thân thiện người dùng
-
-### Truy cập giao diện
-- **Web Interface**: http://localhost:8502
-- **API Server**: http://localhost:8501
-- **API Docs**: http://localhost:8501/docs
-
 ## 🚀 Production Deployment
 
 ### 🌐 **Network Configuration**
@@ -373,12 +357,17 @@ Giảm khoảng thời gian hoặc tăng RAM
 ```
 vnstock-data-collector/
 ├── 📄 main.py                     # FastAPI server chính
+├── 📄 web_interface.py            # Giao diện web đẹp mắt
+├── 📄 start_web_interface.py      # Script khởi chạy web interface
 ├── 📄 vnstock_data_collector_simple.py  # Data collector engine
-├── 📄 start_server.py             # Script khởi chạy
+├── 📄 start_server.py             # Script khởi chạy API server
 ├── 📄 setup.py                    # Auto setup script
 ├── 📄 test_api.py                 # API testing script
 ├── 📄 requirements.txt            # Dependencies
 ├── 📄 n8n_workflow_example.json   # n8n workflow mẫu
+├── 📁 templates/                  # HTML templates
+│   └── 📄 index.html              # Giao diện web chính
+├── 📁 static/                     # CSS, JS, images
 ├── 📄 README.md                   # Documentation
 ├── 📄 .gitignore                  # Git ignore rules
 └── 📁 venv/                       # Virtual environment
