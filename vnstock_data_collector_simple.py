@@ -24,32 +24,45 @@ class VNStockDataCollector:
         self.start_date = "2010-01-01"  # Ngày bắt đầu mặc định
         self.end_date = datetime.now().strftime("%Y-%m-%d")  # Ngày hiện tại
         
-    def _format_currency_value(self, value: Any) -> Any:
+    def _format_currency_value(self, value: Any, is_price_field: bool = False) -> Any:
         """
         Format giá trị tiền tệ để đảm bảo chính xác
-        - Giữ nguyên giá trị gốc (không làm tròn)
-        - Đảm bảo đơn vị VND
-        - Xử lý các trường hợp đặc biệt
+        - Chuyển đổi giá cổ phiếu từ đơn vị nghìn đồng sang VND đầy đủ
+        - Giữ nguyên giá trị gốc cho các trường khác (không làm tròn)
+        - Đảm bảo đơn vị VND chính xác
         """
         if value is None:
             return None
         
         # Nếu là số
         if isinstance(value, (int, float)):
-            # Nếu là float nhưng có thể chuyển thành int (không có phần thập phân)
+            # Nếu là trường giá cổ phiếu (open, high, low, close), chuyển từ nghìn đồng sang VND
+            if is_price_field and isinstance(value, (int, float)):
+                # Nhân với 1000 để chuyển từ nghìn đồng sang VND
+                vnd_value = value * 1000
+                # Nếu kết quả là số nguyên, trả về int
+                if vnd_value.is_integer():
+                    return int(vnd_value)
+                return vnd_value
+            
+            # Các trường khác giữ nguyên
             if isinstance(value, float) and value.is_integer():
                 return int(value)
-            # Giữ nguyên số thực
             return value
         
         # Nếu là string số
         if isinstance(value, str):
             try:
-                # Thử chuyển thành float trước
                 float_val = float(value)
-                if float_val.is_integer():
-                    return int(float_val)
-                return float_val
+                if is_price_field:
+                    vnd_value = float_val * 1000
+                    if vnd_value.is_integer():
+                        return int(vnd_value)
+                    return vnd_value
+                else:
+                    if float_val.is_integer():
+                        return int(float_val)
+                    return float_val
             except (ValueError, TypeError):
                 return value
         
@@ -59,6 +72,8 @@ class VNStockDataCollector:
     def _format_dataframe_currency(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Format toàn bộ DataFrame để đảm bảo tiền tệ chính xác
+        - Chuyển đổi giá cổ phiếu từ nghìn đồng sang VND đầy đủ
+        - Giữ nguyên các trường khác
         """
         if df.empty:
             return df
@@ -66,17 +81,19 @@ class VNStockDataCollector:
         # Tạo bản copy để không ảnh hưởng đến dữ liệu gốc
         formatted_df = df.copy()
         
-        # Các cột có thể chứa giá trị tiền tệ
-        currency_columns = [
-            'open', 'high', 'low', 'close', 'volume',
-            'adj_close', 'adjusted_close', 'value', 'amount'
-        ]
+        # Các cột giá cổ phiếu cần chuyển từ nghìn đồng sang VND
+        price_columns = ['open', 'high', 'low', 'close', 'adj_close', 'adjusted_close']
         
-        # Format các cột tiền tệ
+        # Các cột khác (volume, amount, etc.) giữ nguyên
+        other_currency_columns = ['volume', 'value', 'amount']
+        
+        # Format các cột giá cổ phiếu (chuyển từ nghìn đồng sang VND)
         for col in formatted_df.columns:
-            if any(currency_keyword in col.lower() for currency_keyword in 
-                   ['price', 'value', 'amount', 'volume', 'đồng', 'vnd', 'open', 'high', 'low', 'close']):
-                formatted_df[col] = formatted_df[col].apply(self._format_currency_value)
+            if col.lower() in price_columns:
+                formatted_df[col] = formatted_df[col].apply(lambda x: self._format_currency_value(x, is_price_field=True))
+            elif any(currency_keyword in col.lower() for currency_keyword in 
+                     ['volume', 'value', 'amount', 'đồng', 'vnd']):
+                formatted_df[col] = formatted_df[col].apply(lambda x: self._format_currency_value(x, is_price_field=False))
         
         return formatted_df
         
@@ -104,7 +121,8 @@ class VNStockDataCollector:
                 "current_price_info": formatted_data.to_dict('records') if not formatted_data.empty else {},
                 "data_collection_time": datetime.now().isoformat(),
                 "currency_unit": "VND",
-                "note": "Basic stock data from vnstock - Currency values preserved without rounding"
+                "currency_conversion": "Stock prices converted from thousands VND to full VND (multiplied by 1000)",
+                "note": "Basic stock data from vnstock - Prices in full VND units, no rounding applied"
             }
             
             return overview_data
@@ -148,7 +166,8 @@ class VNStockDataCollector:
                 "daily_data": formatted_daily_data.to_dict('records') if not formatted_daily_data.empty else [],
                 "total_trading_days": len(formatted_daily_data) if not formatted_daily_data.empty else 0,
                 "currency_unit": "VND",
-                "note": "Historical price data from vnstock - Currency values preserved without rounding"
+                "currency_conversion": "Stock prices converted from thousands VND to full VND (multiplied by 1000)",
+                "note": "Historical price data from vnstock - Prices in full VND units, no rounding applied"
             }
             
             return historical_data
@@ -182,7 +201,8 @@ class VNStockDataCollector:
                 "balance_sheet": formatted_balance_sheet.to_dict('records') if not formatted_balance_sheet.empty else [],
                 "last_updated": datetime.now().isoformat(),
                 "currency_unit": "VND",
-                "note": "Financial data from vnstock - Currency values preserved without rounding"
+                "currency_conversion": "Financial data already in full VND units (no conversion needed)",
+                "note": "Financial data from vnstock - Values in full VND units, no rounding applied"
             }
             
             return financial_data
@@ -249,7 +269,8 @@ class VNStockDataCollector:
                 "unit": "VND",
                 "description": "Vietnamese Dong",
                 "precision": "No rounding applied - original values preserved",
-                "note": "All monetary values are in VND without any rounding to prevent calculation errors"
+                "conversion": "Stock prices converted from thousands VND to full VND (×1000), financial data already in full VND",
+                "note": "All monetary values are in full VND units without any rounding to prevent calculation errors"
             }
         }
         

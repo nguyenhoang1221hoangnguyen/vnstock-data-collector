@@ -39,8 +39,12 @@
 
 ### 💰 **5. Đơn vị tiền tệ & Độ chính xác**
 - **Đơn vị**: VND (Đồng Việt Nam) - được ghi rõ trong metadata
+- **Chuyển đổi thông minh**: 
+  - Giá cổ phiếu: Tự động chuyển từ nghìn đồng sang VND đầy đủ (×1000)
+  - Dữ liệu tài chính: Giữ nguyên đơn vị VND đầy đủ
 - **Độ chính xác**: Không làm tròn - giữ nguyên giá trị gốc để tránh sai số
 - **Format**: Số thực (float) hoặc số nguyên (int) tùy theo dữ liệu gốc
+- **Tránh hiểu nhầm**: Tất cả giá trị đều hiển thị theo đơn vị VND chuẩn
 - **Currency tracking**: Metadata đầy đủ cho AI analysis và tính toán
 - **Tương thích**: Hoàn toàn tương thích với các hệ thống tính toán tài chính
 
