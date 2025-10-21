@@ -50,10 +50,37 @@ class StockClassifier:
     def get_all_stocks(self, exchanges: List[str] = ['HOSE', 'HNX']) -> List[str]:
         """Lấy tất cả mã cổ phiếu"""
         try:
-            listing = self.stock.listing.all_symbols()
-            stocks = listing[listing['exchange'].isin(exchanges)]['ticker'].tolist()
+            # Static list of major HOSE stocks (top 100 by market cap)
+            hose_stocks = [
+                'VCB', 'VHM', 'VIC', 'VNM', 'HPG', 'TCB', 'MSN', 'MBB', 'FPT', 'VPB',
+                'VRE', 'CTG', 'BID', 'GAS', 'PLX', 'POW', 'SSI', 'MWG', 'SAB', 'HDB',
+                'STB', 'VJC', 'ACB', 'GVR', 'TPB', 'PDR', 'REE', 'VCG', 'NVL', 'DGC',
+                'BCM', 'KDH', 'VHC', 'VCI', 'HCM', 'DIG', 'VGC', 'CTD', 'VIB', 'PNJ',
+                'DCM', 'DXG', 'GMD', 'HT1', 'KBC', 'MBB', 'NT2', 'PVD', 'SBT', 'VPI',
+                'BVH', 'CII', 'DPM', 'FCN', 'HAG', 'HNG', 'HSG', 'ITA', 'KDC', 'LGC',
+                'NLG', 'PC1', 'PPC', 'PVT', 'SCS', 'SHB', 'SSB', 'VCS', 'VGS', 'VHG',
+                'DHG', 'DPR', 'DRC', 'DVP', 'EIB', 'EVF', 'GEG', 'GMD', 'HCM', 'HDC',
+                'HHS', 'HQC', 'HT1', 'IDC', 'IJC', 'KBC', 'KDC', 'KDH', 'LCG', 'LDG',
+                'LPB', 'MBB', 'MSB', 'NAF', 'NBB', 'NHA', 'NT2', 'NVT', 'OCB', 'PDN'
+            ]
+            
+            hnx_stocks = [
+                'PVS', 'CEO', 'SHS', 'PVI', 'HUT', 'VCG', 'PVX', 'DBC', 'TNG', 'PLC',
+                'NRC', 'VIG', 'BAB', 'NDN', 'PVB', 'DXP', 'TIG', 'VGP', 'PVG', 'HHC',
+                'DTD', 'VCS', 'SLS', 'VC3', 'PVE', 'L14', 'LIG', 'DTT', 'DQC', 'AMC'
+            ]
+            
+            stocks = []
+            if 'HOSE' in exchanges:
+                stocks.extend(hose_stocks)
+            if 'HNX' in exchanges:
+                stocks.extend(hnx_stocks)
+            
+            # Remove duplicates and return
+            stocks = list(set(stocks))
             logger.info(f"Found {len(stocks)} stocks on {exchanges}")
             return stocks
+            
         except Exception as e:
             logger.error(f"Error getting stock list: {e}")
             return []
