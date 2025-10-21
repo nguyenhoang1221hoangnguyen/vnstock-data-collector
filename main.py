@@ -16,6 +16,7 @@ from fa_calculator import calculate_fa_ratios, get_fa_interpretation
 from ta_analyzer import calculate_ta_indicators, plot_technical_chart, get_ta_analysis
 from stock_screener import get_stock_list, screen_stock, run_screener
 from backtesting_strategy import run_ma_crossover_backtest
+from bluechip_detector import BlueChipDetector
 
 # Cấu hình logging
 logging.basicConfig(level=logging.INFO)
@@ -706,6 +707,132 @@ async def backtest_ma_crossover(
             error=str(e),
             timestamp=datetime.now().isoformat()
         )
+
+
+# ========== BLUE-CHIP DETECTOR ENDPOINTS ==========
+
+@app.get("/bluechip/scan")
+async def scan_bluechips(
+    symbols: Optional[str] = Query(None, description="Comma-separated list of symbols (default: VN30)"),
+    min_score: int = Query(4, description="Minimum score to be considered blue-chip (1-6)")
+):
+    """
+    Scan for blue-chip stocks
+    
+    Args:
+        symbols: Comma-separated symbols (e.g. "ACB,VCB,TCB") or None for VN30
+        min_score: Minimum score (1-6) to qualify as blue-chip
+    
+    Returns:
+        List of blue-chip stocks with detailed analysis
+    """
+    try:
+        detector = BlueChipDetector()
+        
+        # Parse symbols
+        symbol_list = None
+        if symbols:
+            symbol_list = [s.strip().upper() for s in symbols.split(',')]
+        
+        # Scan
+        bluechips = detector.scan_bluechips(symbols=symbol_list, min_score=min_score)
+        
+        return {
+            "success": True,
+            "total": len(bluechips),
+            "bluechips": bluechips,
+            "scan_date": datetime.now().isoformat(),
+            "criteria": detector.criteria
+        }
+    except Exception as e:
+        logger.error(f"Error scanning blue-chips: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+@app.post("/bluechip/add-to-watchlist")
+async def add_bluechips_to_watchlist(
+    symbols: Optional[str] = Query(None, description="Comma-separated symbols or None for VN30"),
+    min_score: int = Query(4, description="Minimum score to add to watchlist")
+):
+    """
+    Scan for blue-chips and auto-add to watchlist
+    
+    Args:
+        symbols: Comma-separated symbols or None for VN30
+        min_score: Minimum score to qualify
+    
+    Returns:
+        Number of stocks added to watchlist
+    """
+    try:
+        detector = BlueChipDetector()
+        
+        # Parse symbols
+        symbol_list = None
+        if symbols:
+            symbol_list = [s.strip().upper() for s in symbols.split(',')]
+        
+        # Scan and add
+        bluechips = detector.scan_bluechips(symbols=symbol_list, min_score=min_score)
+        added = detector.auto_add_to_watchlist(bluechips)
+        
+        return {
+            "success": True,
+            "scanned": len(bluechips),
+            "added": added,
+            "symbols": [bc['symbol'] for bc in bluechips],
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error adding blue-chips to watchlist: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+@app.get("/bluechip/report")
+async def get_bluechip_report(
+    symbols: Optional[str] = Query(None, description="Comma-separated symbols or None for VN30"),
+    min_score: int = Query(4, description="Minimum score")
+):
+    """
+    Get detailed blue-chip report
+    
+    Returns:
+        Formatted text report of blue-chip stocks
+    """
+    try:
+        detector = BlueChipDetector()
+        
+        # Parse symbols
+        symbol_list = None
+        if symbols:
+            symbol_list = [s.strip().upper() for s in symbols.split(',')]
+        
+        # Scan
+        bluechips = detector.scan_bluechips(symbols=symbol_list, min_score=min_score)
+        report = detector.get_bluechip_report(bluechips)
+        
+        return {
+            "success": True,
+            "report": report,
+            "bluechips": bluechips,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error generating report: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
 
 if __name__ == "__main__":
     # Chạy server
