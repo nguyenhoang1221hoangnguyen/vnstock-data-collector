@@ -13,6 +13,7 @@ import logging
 
 from vnstock_data_collector_simple import VNStockDataCollector
 from fa_calculator import calculate_fa_ratios, get_fa_interpretation
+from ta_analyzer import calculate_ta_indicators, plot_technical_chart, get_ta_analysis
 
 # Cấu hình logging
 logging.basicConfig(level=logging.INFO)
@@ -66,6 +67,9 @@ async def root():
             "/stock/{symbol}/market": "Lấy dữ liệu thị trường",
             "/stock/{symbol}/fa": "Phân tích cơ bản (FA) - Tính toán chỉ số",
             "/stock/{symbol}/fa/interpret": "Phân tích FA với diễn giải đầy đủ",
+            "/stock/{symbol}/ta": "Phân tích kỹ thuật (TA) - Tính toán chỉ báo",
+            "/stock/{symbol}/ta/analyze": "Phân tích TA với diễn giải tín hiệu",
+            "/stock/{symbol}/ta/chart": "Vẽ biểu đồ kỹ thuật (candlestick + indicators)",
             "/health": "Kiểm tra trạng thái API"
         }
     }
@@ -339,6 +343,156 @@ async def get_fa_interpretation_endpoint(symbol: str):
         raise
     except Exception as e:
         logger.error(f"Lỗi khi phân tích FA cho {symbol}: {str(e)}")
+        return StockResponse(
+            success=False,
+            error=str(e),
+            timestamp=datetime.now().isoformat()
+        )
+
+@app.get("/stock/{symbol}/ta", response_model=StockResponse)
+async def get_ta_indicators(
+    symbol: str,
+    period_days: Optional[int] = Query(365, description="Số ngày lấy dữ liệu (mặc định 365)")
+):
+    """
+    Phân tích kỹ thuật (TA) - Tính toán các chỉ báo
+    
+    - **symbol**: Mã cổ phiếu (VD: FPT, VIC, VCB)
+    - **period_days**: Số ngày lấy dữ liệu (mặc định 365 ngày)
+    
+    Trả về các chỉ báo:
+    - MA(50), MA(200): Moving Averages
+    - RSI(14): Relative Strength Index
+    - MACD(12, 26, 9): Moving Average Convergence Divergence
+    - Bollinger Bands (20, 2)
+    """
+    try:
+        if not symbol or len(symbol.strip()) == 0:
+            raise HTTPException(status_code=400, detail="Mã cổ phiếu không được để trống")
+        
+        logger.info(f"Tính toán TA indicators cho mã: {symbol}")
+        ta_result = calculate_ta_indicators(symbol, period_days)
+        
+        if ta_result.get("error"):
+            return StockResponse(
+                success=False,
+                error=ta_result["error"],
+                timestamp=datetime.now().isoformat()
+            )
+        
+        # Loại bỏ DataFrame khỏi response (quá lớn)
+        response_data = {
+            "symbol": ta_result["symbol"],
+            "period": ta_result["period"],
+            "current_price": ta_result["current_price"],
+            "price_unit": ta_result["price_unit"],
+            "indicators": ta_result["indicators"],
+            "calculation_date": ta_result["calculation_date"]
+        }
+        
+        return StockResponse(
+            success=True,
+            data=response_data,
+            timestamp=datetime.now().isoformat()
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Lỗi khi tính TA indicators cho {symbol}: {str(e)}")
+        return StockResponse(
+            success=False,
+            error=str(e),
+            timestamp=datetime.now().isoformat()
+        )
+
+@app.get("/stock/{symbol}/ta/analyze", response_model=StockResponse)
+async def get_ta_analysis_endpoint(
+    symbol: str,
+    period_days: Optional[int] = Query(365, description="Số ngày lấy dữ liệu (mặc định 365)")
+):
+    """
+    Phân tích TA với diễn giải tín hiệu
+    
+    - **symbol**: Mã cổ phiếu (VD: FPT, VIC, VCB)
+    - **period_days**: Số ngày lấy dữ liệu (mặc định 365 ngày)
+    
+    Trả về:
+    - Các chỉ báo TA
+    - Diễn giải từng chỉ báo
+    - Tín hiệu mua/bán
+    - Xu hướng tổng thể (BULLISH/BEARISH/NEUTRAL)
+    """
+    try:
+        if not symbol or len(symbol.strip()) == 0:
+            raise HTTPException(status_code=400, detail="Mã cổ phiếu không được để trống")
+        
+        logger.info(f"Phân tích TA đầy đủ cho mã: {symbol}")
+        analysis = get_ta_analysis(symbol, period_days)
+        
+        if analysis.get("error"):
+            return StockResponse(
+                success=False,
+                error=analysis["error"],
+                timestamp=datetime.now().isoformat()
+            )
+        
+        return StockResponse(
+            success=True,
+            data=analysis,
+            timestamp=datetime.now().isoformat()
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Lỗi khi phân tích TA cho {symbol}: {str(e)}")
+        return StockResponse(
+            success=False,
+            error=str(e),
+            timestamp=datetime.now().isoformat()
+        )
+
+@app.get("/stock/{symbol}/ta/chart")
+async def generate_ta_chart(
+    symbol: str,
+    period_days: Optional[int] = Query(365, description="Số ngày lấy dữ liệu (mặc định 365)")
+):
+    """
+    Vẽ biểu đồ kỹ thuật (candlestick + indicators)
+    
+    - **symbol**: Mã cổ phiếu (VD: FPT, VIC, VCB)
+    - **period_days**: Số ngày lấy dữ liệu (mặc định 365 ngày)
+    
+    Trả về:
+    - Thông tin biểu đồ đã tạo
+    - Đường dẫn file biểu đồ
+    - Các chỉ báo trên biểu đồ
+    """
+    try:
+        if not symbol or len(symbol.strip()) == 0:
+            raise HTTPException(status_code=400, detail="Mã cổ phiếu không được để trống")
+        
+        logger.info(f"Vẽ biểu đồ TA cho mã: {symbol}")
+        chart_result = plot_technical_chart(symbol, period_days)
+        
+        if not chart_result.get("success"):
+            return StockResponse(
+                success=False,
+                error=chart_result.get("error", "Không thể tạo biểu đồ"),
+                timestamp=datetime.now().isoformat()
+            )
+        
+        return StockResponse(
+            success=True,
+            data=chart_result,
+            timestamp=datetime.now().isoformat()
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Lỗi khi vẽ biểu đồ TA cho {symbol}: {str(e)}")
         return StockResponse(
             success=False,
             error=str(e),
