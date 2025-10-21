@@ -28,23 +28,44 @@ def get_stock_list(exchange: str = "HOSE") -> List[str]:
         List các mã cổ phiếu
     """
     try:
-        from vnstock import Listing
-        
         logger.info(f"Lấy danh sách cổ phiếu sàn {exchange}...")
         
-        # Lấy danh sách cổ phiếu
-        listing = Listing()
-        stock_list = listing.all_symbols()
+        # Static list of major stocks (same as stock_classifier.py)
+        hose_stocks = [
+            'VCB', 'VHM', 'VIC', 'VNM', 'HPG', 'TCB', 'MSN', 'MBB', 'FPT', 'VPB',
+            'VRE', 'CTG', 'BID', 'GAS', 'PLX', 'POW', 'SSI', 'MWG', 'SAB', 'HDB',
+            'STB', 'VJC', 'ACB', 'GVR', 'TPB', 'PDR', 'REE', 'VCG', 'NVL', 'DGC',
+            'BCM', 'KDH', 'VHC', 'VCI', 'HCM', 'DIG', 'VGC', 'CTD', 'VIB', 'PNJ',
+            'DCM', 'DXG', 'GMD', 'HT1', 'KBC', 'NT2', 'PVD', 'SBT', 'VPI',
+            'BVH', 'CII', 'DPM', 'FCN', 'HAG', 'HNG', 'HSG', 'ITA', 'KDC', 'LGC',
+            'NLG', 'PC1', 'PPC', 'PVT', 'SCS', 'SHB', 'SSB', 'VCS', 'VGS', 'VHG',
+            'DHG', 'DPR', 'DRC', 'DVP', 'EIB', 'EVF', 'GEG', 'HDC',
+            'HHS', 'HQC', 'IDC', 'IJC', 'LCG', 'LDG',
+            'LPB', 'MSB', 'NAF', 'NBB', 'NHA', 'NVT', 'OCB', 'PDN'
+        ]
         
-        # Lọc theo sàn
-        if not stock_list.empty:
-            filtered = stock_list[stock_list['exchange'] == exchange]
-            symbols = filtered['ticker'].tolist()
-            logger.info(f"Lấy được {len(symbols)} mã cổ phiếu sàn {exchange}")
-            return symbols
+        hnx_stocks = [
+            'PVS', 'CEO', 'SHS', 'PVI', 'HUT', 'VCG', 'PVX', 'DBC', 'TNG', 'PLC',
+            'NRC', 'VIG', 'BAB', 'NDN', 'PVB', 'DXP', 'TIG', 'VGP', 'PVG', 'HHC',
+            'DTD', 'VCS', 'SLS', 'VC3', 'PVE', 'L14', 'LIG', 'DTT', 'DQC', 'AMC'
+        ]
+        
+        upcom_stocks = [
+            'KSB', 'HTP', 'BII', 'VTO', 'AAV', 'DLD', 'NHH', 'SVC', 'MCO', 'VNR'
+        ]
+        
+        # Return based on exchange
+        if exchange.upper() == "HOSE":
+            stocks = hose_stocks
+        elif exchange.upper() == "HNX":
+            stocks = hnx_stocks
+        elif exchange.upper() == "UPCOM":
+            stocks = upcom_stocks
         else:
-            logger.warning("Không có dữ liệu danh sách cổ phiếu")
-            return []
+            stocks = []
+        
+        logger.info(f"Lấy được {len(stocks)} mã cổ phiếu sàn {exchange}")
+        return stocks
             
     except Exception as e:
         logger.error(f"Lỗi khi lấy danh sách cổ phiếu: {str(e)}")
