@@ -9,3 +9,5 @@ requests>=2.25.0
 mplfinance>=0.12.0
 matplotlib>=3.5.0
 backtesting>=0.3.0
+streamlit>=1.28.0
+plotly>=5.17.0

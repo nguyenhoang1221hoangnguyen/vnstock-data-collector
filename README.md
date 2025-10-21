@@ -6,11 +6,13 @@
 
 - **📊 Thu thập dữ liệu toàn diện**: 15+ năm dữ liệu lịch sử (3,940+ bản ghi) + 17+ năm báo cáo tài chính (51 báo cáo)
 - **🔗 API RESTful hoàn chỉnh**: Tích hợp dễ dàng với n8n, AI agents và các hệ thống khác
+- **📈 Dashboard trực quan**: Web UI với biểu đồ nến, khối lượng và metrics tương tác (Streamlit + Plotly)
 - **🤖 Tối ưu cho AI**: Cấu trúc JSON rõ ràng, metadata phong phú, gợi ý phân tích tự động
 - **⚡ Hiệu suất cao**: Không giới hạn thời gian hay số lượng bản ghi, dữ liệu real-time
 - **🛡️ Ổn định**: Logging chi tiết, error handling, health check endpoint
 - **🐳 Dễ triển khai**: Docker support, virtual environment, one-command setup
 - **💰 Đơn vị tiền tệ VND chính xác**: Không làm tròn để tránh sai số, metadata đầy đủ cho currency tracking
+- **🧮 Phân tích nâng cao**: FA (P/E, ROE), TA (MA, RSI), Stock Screener, Backtesting
 
 ## 📊 Dữ liệu thu thập (Toàn diện & Không giới hạn)
 
@@ -60,8 +62,11 @@ cd vnstock-data-collector
 # Chạy setup tự động
 python setup.py
 
-# Khởi chạy server
+# Khởi chạy API Server
 python start_server.py
+
+# Khởi chạy Dashboard (optional)
+python start_dashboard.py
 ```
 
 ### 🐍 **Cách 2: Manual setup**
@@ -75,8 +80,11 @@ source venv/bin/activate  # Linux/Mac
 # Cài đặt dependencies
 pip install -r requirements.txt
 
-# Khởi chạy server
+# Khởi chạy API Server
 python start_server.py
+
+# Khởi chạy Dashboard (optional, terminal mới)
+python start_dashboard.py
 ```
 
 ### 🐳 **Cách 3: Docker (Coming soon)**
@@ -86,7 +94,48 @@ docker build -t vnstock-collector .
 docker run -p 8501:8501 vnstock-collector
 ```
 
-**Server sẽ chạy tại**: `http://localhost:8501`
+**Server sẽ chạy tại**: 
+- **API Server**: `http://localhost:8501`
+- **Dashboard**: `http://localhost:8502`
+
+## 📊 VNStock Dashboard
+
+### 🎨 Tính năng Dashboard
+
+Dashboard cung cấp giao diện web trực quan để phân tích cổ phiếu:
+
+- **📈 Biểu đồ nến (Candlestick)**: Hiển thị OHLC với zoom/pan tương tác
+- **📊 Khối lượng giao dịch**: Biểu đồ cột với màu sắc theo xu hướng
+- **💹 Metrics real-time**: Giá hiện tại, cao/thấp nhất, biến động
+- **📋 Dữ liệu chi tiết**: Bảng dữ liệu có thể export CSV
+- **📈 Thống kê**: Volatility, tổng khối lượng, số phiên giao dịch
+
+### 🚀 Khởi chạy Dashboard
+
+```bash
+# Activate virtual environment
+source venv/bin/activate
+
+# Chạy dashboard
+python start_dashboard.py
+
+# Hoặc chạy trực tiếp
+streamlit run dashboard.py --server.port=8502 --server.address=0.0.0.0
+```
+
+### 🌐 Truy cập Dashboard
+
+- **Local**: `http://localhost:8502`
+- **Network**: `http://192.168.1.4:8502` (từ máy khác trong mạng)
+
+### 📖 Hướng dẫn sử dụng Dashboard
+
+1. **Nhập mã cổ phiếu** (VD: ACB, VIC, FPT, TCB)
+2. **Chọn khoảng thời gian** (30 ngày - 3 năm)
+3. **Nhấn "Tải dữ liệu"**
+4. **Phân tích** biểu đồ và metrics
+
+Chi tiết đầy đủ: Xem file [DASHBOARD_GUIDE.md](DASHBOARD_GUIDE.md)
 
 ## 📖 API Documentation
 
@@ -360,16 +409,25 @@ Giảm khoảng thời gian hoặc tăng RAM
 
 ```
 vnstock-data-collector/
-├── 📄 main.py                     # FastAPI server chính
-├── 📄 vnstock_data_collector_simple.py  # Data collector engine
-├── 📄 start_server.py             # Script khởi chạy
-├── 📄 setup.py                    # Auto setup script
-├── 📄 test_api.py                 # API testing script
-├── 📄 requirements.txt            # Dependencies
-├── 📄 n8n_workflow_example.json   # n8n workflow mẫu
-├── 📄 README.md                   # Documentation
-├── 📄 .gitignore                  # Git ignore rules
-└── 📁 venv/                       # Virtual environment
+├── 📄 main.py                          # FastAPI server chính
+├── 📄 vnstock_data_collector_simple.py # Data collector engine
+├── 📄 start_server.py                  # Script khởi chạy API
+├── 📄 dashboard.py                     # Streamlit dashboard
+├── 📄 start_dashboard.py               # Script khởi chạy Dashboard
+├── 📄 fa_calculator.py                 # Fundamental Analysis module
+├── 📄 ta_analyzer.py                   # Technical Analysis module
+├── 📄 stock_screener.py                # Stock Screener module
+├── 📄 backtesting_strategy.py          # Backtesting module
+├── 📄 setup.py                         # Auto setup script
+├── 📄 test_api.py                      # API testing script
+├── 📄 requirements.txt                 # Dependencies
+├── 📄 n8n_workflow_example.json        # n8n workflow mẫu
+├── 📄 README.md                        # Documentation chính
+├── 📄 DASHBOARD_GUIDE.md               # Dashboard documentation
+├── 📄 FA_ANALYSIS_GUIDE.md             # FA documentation
+├── 📄 DOCKER_DEPLOYMENT.md             # Docker deployment guide
+├── 📄 .gitignore                       # Git ignore rules
+└── 📁 venv/                            # Virtual environment
 ```
 
 ## 🎯 Use Cases
