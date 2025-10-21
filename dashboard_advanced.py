@@ -885,6 +885,16 @@ def main():
                 key="screener_limit"
             )
             
+            scan_delay = st.slider(
+                "Delay giữa các requests (giây)",
+                min_value=6.0,
+                max_value=10.0,
+                value=8.0,
+                step=0.5,
+                help="Thời gian chờ giữa mỗi request để tránh rate limit. Khuyến nghị: 8 giây",
+                key="screener_delay"
+            )
+            
             st.markdown("---")
             st.subheader("🔍 Bộ lọc")
             
