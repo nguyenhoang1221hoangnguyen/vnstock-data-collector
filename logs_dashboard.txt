@@ -9,3 +9,15 @@
   $ xcode-select --install
   $ pip install watchdog
             
+2025-10-21 19:07:03.464 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+ERROR:__main__:Lỗi khi lấy FA data: HTTPConnectionPool(host='localhost', port=8501): Read timed out. (read timeout=10)
+ERROR:__main__:Lỗi khi lấy FA data: HTTPConnectionPool(host='localhost', port=8501): Read timed out. (read timeout=10)
+ERROR:__main__:Lỗi khi lấy FA data: HTTPConnectionPool(host='localhost', port=8501): Read timed out. (read timeout=10)
+ERROR:__main__:Lỗi khi lấy TA analysis: HTTPConnectionPool(host='localhost', port=8501): Read timed out. (read timeout=10)
+INFO:database:All tables created successfully
+INFO:database:Database initialized: vnstock.db
+INFO:stock_classifier:StockClassifier initialized

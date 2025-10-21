@@ -310,9 +310,26 @@ class StockClassifier:
             'signal_count': {'bullish': bullish_count, 'bearish': bearish_count}
         }
     
-    def classify_stock(self, symbol: str, use_cache: bool = True) -> Dict:
-        """Phân loại toàn diện 1 mã cổ phiếu"""
+    def classify_stock(self, symbol: str, use_cache: bool = True, save_cache: bool = True) -> Dict:
+        """
+        Phân loại toàn diện 1 mã cổ phiếu
+        
+        Args:
+            symbol: Mã cổ phiếu
+            use_cache: Dùng cache nếu có (< 24h)
+            save_cache: Tự động lưu kết quả vào cache
+        
+        Returns:
+            Dict: Kết quả classification
+        """
         try:
+            # Check cache first if enabled
+            if use_cache:
+                cached = self.db.get_cached_classification(symbol, max_age_hours=24)
+                if cached:
+                    logger.info(f"✅ Using cached classification for {symbol} (age: {cached['age_hours']:.1f}h)")
+                    return cached['data']
+            
             logger.info(f"Classifying {symbol}...")
             
             result = {
@@ -352,6 +369,12 @@ class StockClassifier:
             result['overall_rating'] = self._calculate_overall_rating(result['classifications'])
             
             logger.info(f"Classified {symbol}: {result['overall_rating']['rating']}")
+            
+            # Save to cache if enabled and no error
+            if save_cache and not result.get('error'):
+                exchange = 'HOSE'  # Default, can be improved by detecting from symbol
+                self.db.save_classification_result(symbol, result, exchange)
+                logger.info(f"💾 Saved {symbol} to cache")
             
             return result
             

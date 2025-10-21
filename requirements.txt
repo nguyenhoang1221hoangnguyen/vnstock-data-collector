@@ -24,6 +24,9 @@ backtesting>=0.3.0
 # Dashboard
 streamlit>=1.28.0
 
+# Background tasks
+schedule>=1.2.0
+
 # Notifications
 # For email notifications (built-in smtplib is used)
 # For Telegram/Discord - requests library is sufficient

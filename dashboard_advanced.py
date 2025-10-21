@@ -860,43 +860,72 @@ def main():
     
     # ========== TAB 6: STOCK SCREENER ==========
     with tab6:
-        st.header("🎯 Stock Screener & Classification")
-        st.markdown("Scan và phân loại cổ phiếu theo nhiều tiêu chí")
+        st.header("🎯 Smart Stock Screener")
+        st.markdown("*3 chế độ: Lightning (Cache) • Smart Refresh • Deep Scan*")
+        
+        # Import database
+        from database import get_db
+        from stock_classifier import StockClassifier
+        
+        db = get_db()
+        classifier = StockClassifier()
+        
+        # Get cache stats
+        cache_stats = db.get_cache_stats()
+        
+        # Show cache stats in sidebar
+        with st.sidebar:
+            st.markdown("---")
+            st.subheader("💾 Cache Status")
+            if cache_stats.get('total_cached', 0) > 0:
+                st.metric("Cached Stocks", cache_stats['total_cached'])
+                st.metric("Fresh (< 24h)", cache_stats['fresh_24h'])
+                st.metric("Coverage", f"{cache_stats['coverage_percent']:.1f}%")
+                if cache_stats.get('last_scan'):
+                    last_scan_time = datetime.fromisoformat(cache_stats['last_scan'])
+                    st.caption(f"Last scan: {last_scan_time.strftime('%Y-%m-%d %H:%M')}")
+            else:
+                st.info("📦 No cache yet. Run first scan!")
+        
+        # Mode selection
+        st.markdown("### Chọn chế độ Scan")
+        mode = st.radio(
+            "Mode",
+            [
+                "⚡ Lightning Mode (Cache - Instant)",
+                "🔄 Smart Refresh (Cache + Update old)",
+                "🚀 Deep Scan (Full new scan)"
+            ],
+            horizontal=False,
+            key="scan_mode"
+        )
+        
+        st.markdown("---")
         
         # Two columns: Settings and Results
         col_settings, col_results = st.columns([1, 2])
         
         with col_settings:
-            st.subheader("⚙️ Cài đặt Scan")
-            
-            # Scan settings
-            scan_exchange = st.selectbox(
-                "Sàn giao dịch",
-                ["HOSE", "HNX", "HOSE+HNX"],
-                key="screener_exchange"
-            )
-            
-            scan_limit = st.slider(
-                "Số lượng mã quét",
-                min_value=10,
-                max_value=100,
-                value=20,
-                step=10,
-                key="screener_limit"
-            )
-            
-            scan_delay = st.slider(
-                "Delay giữa các requests (giây)",
-                min_value=6.0,
-                max_value=10.0,
-                value=8.0,
-                step=0.5,
-                help="Thời gian chờ giữa mỗi request để tránh rate limit. Khuyến nghị: 8 giây",
-                key="screener_delay"
-            )
-            
-            st.markdown("---")
-            st.subheader("🔍 Bộ lọc")
+            if mode == "⚡ Lightning Mode (Cache - Instant)":
+                st.subheader("⚡ Lightning Settings")
+                st.info("📦 Dùng data đã scan (< 24h) - Siêu nhanh!")
+                
+                cache_age = st.slider(
+                    "Max cache age (hours)",
+                    min_value=1,
+                    max_value=48,
+                    value=24,
+                    key="cache_age"
+                )
+                
+                scan_exchange = st.selectbox(
+                    "Exchange",
+                    ["All", "HOSE", "HNX"],
+                    key="lightning_exchange"
+                )
+                
+                st.markdown("---")
+                st.subheader("🔍 Bộ lọc")
             
             # Filters
             filter_growth = st.selectbox(

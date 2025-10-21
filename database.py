@@ -106,6 +106,32 @@ class VNStockDB:
             )
         ''')
         
+        # Stock Classification Cache table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS stock_classification_cache (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                symbol TEXT NOT NULL UNIQUE,
+                classification_data TEXT NOT NULL,
+                scan_timestamp TEXT NOT NULL,
+                exchange TEXT,
+                growth_category TEXT,
+                growth_score REAL,
+                risk_category TEXT,
+                risk_score REAL,
+                market_cap_category TEXT,
+                momentum_category TEXT,
+                overall_rating TEXT,
+                overall_score REAL
+            )
+        ''')
+        
+        # Create indexes for fast filtering
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_growth_category ON stock_classification_cache(growth_category)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_risk_category ON stock_classification_cache(risk_category)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_overall_rating ON stock_classification_cache(overall_rating)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_scan_timestamp ON stock_classification_cache(scan_timestamp)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_exchange ON stock_classification_cache(exchange)')
+        
         self.conn.commit()
         logger.info("All tables created successfully")
     
@@ -486,9 +512,233 @@ class VNStockDB:
             'chart_layouts_count': cursor.execute('SELECT COUNT(*) FROM chart_layouts').fetchone()[0],
             'open_positions_count': cursor.execute('SELECT COUNT(*) FROM portfolio WHERE status = "open"').fetchone()[0],
             'total_transactions': cursor.execute('SELECT COUNT(*) FROM transactions').fetchone()[0],
+            'cached_stocks_count': cursor.execute('SELECT COUNT(*) FROM stock_classification_cache').fetchone()[0],
         }
         
         return stats
+    
+    # ========== STOCK CLASSIFICATION CACHE OPERATIONS ==========
+    
+    def save_classification_result(self, symbol: str, data: Dict, exchange: str = 'HOSE') -> bool:
+        """
+        Lưu kết quả classification vào cache
+        
+        Args:
+            symbol: Mã cổ phiếu
+            data: Dict chứa classification data
+            exchange: Sàn giao dịch (HOSE/HNX)
+        
+        Returns:
+            bool: True nếu lưu thành công
+        """
+        try:
+            cursor = self.conn.cursor()
+            
+            classifications = data.get('classifications', {})
+            overall = data.get('overall_rating', {})
+            
+            cursor.execute('''
+                INSERT OR REPLACE INTO stock_classification_cache 
+                (symbol, classification_data, scan_timestamp, exchange,
+                 growth_category, growth_score, risk_category, risk_score,
+                 market_cap_category, momentum_category, overall_rating, overall_score)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                symbol.upper(),
+                json.dumps(data),
+                datetime.now().isoformat(),
+                exchange.upper(),
+                classifications.get('growth', {}).get('category'),
+                classifications.get('growth', {}).get('score'),
+                classifications.get('risk', {}).get('category'),
+                classifications.get('risk', {}).get('risk_score'),
+                classifications.get('market_cap', {}).get('category'),
+                classifications.get('momentum', {}).get('category'),
+                overall.get('rating'),
+                overall.get('score')
+            ))
+            
+            self.conn.commit()
+            logger.info(f"Saved classification for {symbol} to cache")
+            return True
+        except Exception as e:
+            logger.error(f"Error saving classification: {e}")
+            return False
+    
+    def get_cached_classification(self, symbol: str, max_age_hours: int = 24) -> Optional[Dict]:
+        """
+        Lấy kết quả classification từ cache nếu còn fresh
+        
+        Args:
+            symbol: Mã cổ phiếu
+            max_age_hours: Tuổi tối đa của cache (giờ)
+        
+        Returns:
+            Dict hoặc None nếu không tìm thấy/quá cũ
+        """
+        try:
+            cursor = self.conn.cursor()
+            
+            cursor.execute('''
+                SELECT classification_data, scan_timestamp
+                FROM stock_classification_cache
+                WHERE symbol = ?
+                AND datetime(scan_timestamp) > datetime('now', '-' || ? || ' hours')
+            ''', (symbol.upper(), max_age_hours))
+            
+            row = cursor.fetchone()
+            if row:
+                return {
+                    'data': json.loads(row[0]),
+                    'cached': True,
+                    'timestamp': row[1],
+                    'age_hours': (datetime.now() - datetime.fromisoformat(row[1])).total_seconds() / 3600
+                }
+            return None
+        except Exception as e:
+            logger.error(f"Error getting cached classification: {e}")
+            return None
+    
+    def get_all_cached_classifications(self, exchange: str = None, max_age_hours: int = 24, 
+                                      min_rating: str = None, limit: int = None) -> List[Dict]:
+        """
+        Lấy tất cả kết quả classification từ cache
+        
+        Args:
+            exchange: Sàn giao dịch (HOSE/HNX) hoặc None cho tất cả
+            max_age_hours: Tuổi tối đa của cache (giờ)
+            min_rating: Rating tối thiểu (A+, A, B, C, D, F)
+            limit: Giới hạn số lượng kết quả
+        
+        Returns:
+            List[Dict]: Danh sách kết quả
+        """
+        try:
+            cursor = self.conn.cursor()
+            
+            # Build query
+            query = '''
+                SELECT symbol, classification_data, scan_timestamp
+                FROM stock_classification_cache
+                WHERE datetime(scan_timestamp) > datetime('now', '-' || ? || ' hours')
+            '''
+            params = [max_age_hours]
+            
+            if exchange:
+                query += ' AND exchange = ?'
+                params.append(exchange.upper())
+            
+            if min_rating:
+                # Convert rating to score for comparison
+                rating_scores = {'A+': 8, 'A': 7, 'B': 6, 'C': 5, 'D': 4, 'F': 0}
+                min_score = rating_scores.get(min_rating, 0)
+                query += ' AND overall_score >= ?'
+                params.append(min_score)
+            
+            query += ' ORDER BY overall_score DESC'
+            
+            if limit:
+                query += ' LIMIT ?'
+                params.append(limit)
+            
+            cursor.execute(query, params)
+            
+            results = []
+            for row in cursor.fetchall():
+                data = json.loads(row[1])
+                results.append({
+                    'symbol': row[0],
+                    **data,
+                    'cached': True,
+                    'cache_timestamp': row[2],
+                    'age_hours': (datetime.now() - datetime.fromisoformat(row[2])).total_seconds() / 3600
+                })
+            
+            logger.info(f"Retrieved {len(results)} cached classifications")
+            return results
+        except Exception as e:
+            logger.error(f"Error getting all cached classifications: {e}")
+            return []
+    
+    def get_outdated_classifications(self, max_age_hours: int = 24, limit: int = None) -> List[Dict]:
+        """
+        Lấy danh sách stocks có cache quá cũ (cần refresh)
+        
+        Args:
+            max_age_hours: Tuổi để coi là "outdated"
+            limit: Giới hạn số lượng
+        
+        Returns:
+            List[Dict]: Danh sách stocks cần refresh
+        """
+        try:
+            cursor = self.conn.cursor()
+            
+            query = '''
+                SELECT symbol, scan_timestamp
+                FROM stock_classification_cache
+                WHERE datetime(scan_timestamp) <= datetime('now', '-' || ? || ' hours')
+                ORDER BY scan_timestamp ASC
+            '''
+            params = [max_age_hours]
+            
+            if limit:
+                query += ' LIMIT ?'
+                params.append(limit)
+            
+            cursor.execute(query, params)
+            
+            results = []
+            for row in cursor.fetchall():
+                age_hours = (datetime.now() - datetime.fromisoformat(row[1])).total_seconds() / 3600
+                results.append({
+                    'symbol': row[0],
+                    'last_scan': row[1],
+                    'age_hours': age_hours
+                })
+            
+            return results
+        except Exception as e:
+            logger.error(f"Error getting outdated classifications: {e}")
+            return []
+    
+    def get_last_scan_time(self) -> Optional[str]:
+        """Lấy thời gian scan gần nhất"""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute('SELECT MAX(scan_timestamp) FROM stock_classification_cache')
+            result = cursor.fetchone()
+            return result[0] if result[0] else None
+        except Exception as e:
+            logger.error(f"Error getting last scan time: {e}")
+            return None
+    
+    def get_cache_stats(self) -> Dict:
+        """Lấy thống kê cache"""
+        try:
+            cursor = self.conn.cursor()
+            
+            total = cursor.execute('SELECT COUNT(*) FROM stock_classification_cache').fetchone()[0]
+            
+            fresh_24h = cursor.execute('''
+                SELECT COUNT(*) FROM stock_classification_cache
+                WHERE datetime(scan_timestamp) > datetime('now', '-24 hours')
+            ''').fetchone()[0]
+            
+            outdated = total - fresh_24h
+            
+            last_scan = self.get_last_scan_time()
+            
+            return {
+                'total_cached': total,
+                'fresh_24h': fresh_24h,
+                'outdated_24h': outdated,
+                'last_scan': last_scan,
+                'coverage_percent': (fresh_24h / total * 100) if total > 0 else 0
+            }
+        except Exception as e:
+            logger.error(f"Error getting cache stats: {e}")
+            return {}
     
     def clear_all_data(self, confirm: bool = False):
         """Clear all data (USE WITH CAUTION!)"""
