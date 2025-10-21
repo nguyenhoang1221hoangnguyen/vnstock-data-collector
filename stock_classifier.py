@@ -295,12 +295,7 @@ class StockClassifier:
             
             # Get TA data
             try:
-                stock_obj = self.stock.stock(symbol=symbol, source='VCI')
-                end_date = datetime.now().strftime("%Y-%m-%d")
-                start_date = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
-                df = stock_obj.quote.history(start=start_date, end=end_date)
-                
-                ta_data = calculate_ta_indicators(df) if not df.empty else {}
+                ta_data = calculate_ta_indicators(symbol, period_days=365)
             except Exception as e:
                 logger.warning(f"Could not get TA data for {symbol}: {e}")
                 ta_data = {}
