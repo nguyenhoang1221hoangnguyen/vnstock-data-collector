@@ -48,6 +48,12 @@ def calculate_fa_ratios(symbol: str) -> Dict[str, Any]:
                 # Giá đóng cửa gần nhất (đã ở đơn vị nghìn đồng)
                 current_price = float(price_data.iloc[-1]['close'])
                 logger.info(f"Giá hiện tại: {current_price} nghìn đồng")
+        except SystemExit as e:
+            logger.error(f"Rate limit hit for {symbol} when getting price: {str(e)}")
+            return {
+                "error": f"Rate limit exceeded for {symbol}. Please wait and try again.",
+                "symbol": symbol
+            }
         except Exception as e:
             logger.warning(f"Không lấy được giá thị trường: {str(e)}")
         
@@ -60,6 +66,12 @@ def calculate_fa_ratios(symbol: str) -> Dict[str, Any]:
                 # Lấy 4 quý gần nhất
                 income_statement = income_statement.head(4)
                 logger.info(f"Lấy được {len(income_statement)} quý KQKD")
+        except SystemExit as e:
+            logger.error(f"Rate limit hit for {symbol} when getting income statement: {str(e)}")
+            return {
+                "error": f"Rate limit exceeded for {symbol}. Please wait and try again.",
+                "symbol": symbol
+            }
         except Exception as e:
             logger.warning(f"Không lấy được KQKD: {str(e)}")
         
@@ -72,6 +84,13 @@ def calculate_fa_ratios(symbol: str) -> Dict[str, Any]:
                 # Lấy quý gần nhất
                 balance_sheet = balance_sheet.head(1)
                 logger.info(f"Lấy được CĐKT quý gần nhất")
+        except SystemExit as e:
+            # VNStock calls sys.exit() on rate limit - catch it!
+            logger.error(f"Rate limit hit for {symbol}: {str(e)}")
+            return {
+                "error": f"Rate limit exceeded for {symbol}. Please wait and try again.",
+                "symbol": symbol
+            }
         except Exception as e:
             logger.warning(f"Không lấy được CĐKT: {str(e)}")
         

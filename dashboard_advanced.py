@@ -936,7 +936,7 @@ def main():
                         params = {
                             "exchanges": ",".join(exchanges),
                             "limit": scan_limit,
-                            "delay": 3.0
+                            "delay": 5.0  # Increased from 3.0 to 5.0 to avoid rate limits
                         }
                         
                         # Calculate timeout: each stock takes ~4 seconds (API + delay)
