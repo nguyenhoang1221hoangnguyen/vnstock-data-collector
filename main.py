@@ -15,6 +15,7 @@ from vnstock_data_collector_simple import VNStockDataCollector
 from fa_calculator import calculate_fa_ratios, get_fa_interpretation
 from ta_analyzer import calculate_ta_indicators, plot_technical_chart, get_ta_analysis
 from stock_screener import get_stock_list, screen_stock, run_screener
+from backtesting_strategy import run_ma_crossover_backtest
 
 # Cấu hình logging
 logging.basicConfig(level=logging.INFO)
@@ -74,6 +75,7 @@ async def root():
             "/screener/list": "Lấy danh sách cổ phiếu theo sàn",
             "/screener/screen": "Sàng lọc cổ phiếu theo tiêu chí FA + TA",
             "/screener/{symbol}": "Kiểm tra một mã cổ phiếu với tiêu chí",
+            "/backtest/{symbol}": "Backtest chiến lược MA Crossover",
             "/health": "Kiểm tra trạng thái API"
         }
     }
@@ -633,6 +635,72 @@ async def run_stock_screener(
         
     except Exception as e:
         logger.error(f"Lỗi khi chạy screener: {str(e)}")
+        return StockResponse(
+            success=False,
+            error=str(e),
+            timestamp=datetime.now().isoformat()
+        )
+
+@app.get("/backtest/{symbol}")
+async def backtest_ma_crossover(
+    symbol: str,
+    initial_cash: Optional[float] = Query(100_000_000, description="Vốn ban đầu (VND)"),
+    ma_fast: Optional[int] = Query(20, description="MA nhanh"),
+    ma_slow: Optional[int] = Query(50, description="MA chậm"),
+    period_days: Optional[int] = Query(1095, description="Số ngày dữ liệu (3 năm)"),
+    commission: Optional[float] = Query(0.001, description="Phí giao dịch (0.1%)")
+):
+    """
+    Backtest chiến lược MA Crossover
+    
+    - **symbol**: Mã cổ phiếu (VD: TCB, VCB, FPT)
+    - **initial_cash**: Vốn ban đầu VND (mặc định 100 triệu)
+    - **ma_fast**: MA nhanh (mặc định 20)
+    - **ma_slow**: MA chậm (mặc định 50)
+    - **period_days**: Số ngày dữ liệu (mặc định 1095 = 3 năm)
+    - **commission**: Phí giao dịch (mặc định 0.001 = 0.1%)
+    
+    Chiến lược:
+    - Mua khi MA nhanh cắt lên MA chậm (Golden Cross)
+    - Bán khi MA nhanh cắt xuống MA chậm (Death Cross)
+    
+    Trả về:
+    - Kết quả backtest chi tiết
+    - Thống kê (Equity, Return, Win Rate, Drawdown)
+    - Diễn giải và khuyến nghị
+    """
+    try:
+        if not symbol or len(symbol.strip()) == 0:
+            raise HTTPException(status_code=400, detail="Mã cổ phiếu không được để trống")
+        
+        logger.info(f"Chạy backtest cho mã {symbol}")
+        
+        result = run_ma_crossover_backtest(
+            symbol=symbol,
+            initial_cash=initial_cash,
+            ma_fast=ma_fast,
+            ma_slow=ma_slow,
+            period_days=period_days,
+            commission=commission
+        )
+        
+        if not result.get("success"):
+            return StockResponse(
+                success=False,
+                error=result.get("error", "Unknown error"),
+                timestamp=datetime.now().isoformat()
+            )
+        
+        return StockResponse(
+            success=True,
+            data=result,
+            timestamp=datetime.now().isoformat()
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Lỗi khi chạy backtest cho {symbol}: {str(e)}")
         return StockResponse(
             success=False,
             error=str(e),
