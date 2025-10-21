@@ -17,6 +17,7 @@ from ta_analyzer import calculate_ta_indicators, plot_technical_chart, get_ta_an
 from stock_screener import get_stock_list, screen_stock, run_screener
 from backtesting_strategy import run_ma_crossover_backtest
 from bluechip_detector import BlueChipDetector
+from stock_classifier import StockClassifier
 
 # Cấu hình logging
 logging.basicConfig(level=logging.INFO)
@@ -827,6 +828,212 @@ async def get_bluechip_report(
         }
     except Exception as e:
         logger.error(f"Error generating report: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+# ========== STOCK CLASSIFICATION ENDPOINTS ==========
+
+@app.get("/classify/stock/{symbol}")
+async def classify_single_stock(symbol: str):
+    """
+    Phân loại chi tiết 1 mã cổ phiếu
+    
+    Returns:
+        Complete classification including growth, risk, market cap, momentum
+    """
+    try:
+        classifier = StockClassifier()
+        result = classifier.classify_stock(symbol.upper())
+        
+        return {
+            "success": True,
+            "data": result,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error classifying {symbol}: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+@app.get("/classify/market")
+async def classify_market_scan(
+    exchanges: str = Query('HOSE', description="Comma-separated exchanges (HOSE, HNX)"),
+    limit: int = Query(50, description="Số lượng mã quét"),
+    delay: float = Query(3.0, description="Delay between requests (seconds)")
+):
+    """
+    Quét và phân loại thị trường
+    
+    Returns:
+        DataFrame of classified stocks with summary statistics
+    """
+    try:
+        classifier = StockClassifier()
+        
+        # Parse exchanges
+        exchange_list = [e.strip().upper() for e in exchanges.split(',')]
+        
+        # Scan
+        df = classifier.scan_and_classify_market(
+            exchanges=exchange_list,
+            limit=limit,
+            delay=delay
+        )
+        
+        if df.empty:
+            return {
+                "success": False,
+                "error": "No stocks classified successfully",
+                "timestamp": datetime.now().isoformat()
+            }
+        
+        # Summary statistics
+        summary = {
+            "total_stocks": len(df),
+            "by_growth": df['growth_category'].value_counts().to_dict(),
+            "by_risk": df['risk_category'].value_counts().to_dict(),
+            "by_market_cap": df['market_cap_category'].value_counts().to_dict(),
+            "by_rating": df['overall_rating'].value_counts().to_dict(),
+            "avg_score": round(df['overall_score'].mean(), 2),
+            "top_rated": df.nlargest(10, 'overall_score')[
+                ['symbol', 'overall_rating', 'overall_score', 'recommendation']
+            ].to_dict('records')
+        }
+        
+        return {
+            "success": True,
+            "summary": summary,
+            "stocks": df.to_dict('records'),
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error scanning market: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+@app.get("/classify/filter")
+async def filter_by_classification(
+    growth: Optional[str] = Query(None, description="Growth category (high_growth, growth, stable, value)"),
+    risk: Optional[str] = Query(None, description="Risk category (low_risk, medium_risk, high_risk)"),
+    rating: Optional[str] = Query(None, description="Rating (A+, A, B, C, D, F)"),
+    min_score: Optional[float] = Query(None, description="Minimum overall score"),
+    limit: int = Query(100, description="Max stocks to scan")
+):
+    """
+    Lọc cổ phiếu theo classification criteria
+    
+    Returns:
+        Filtered list of stocks matching criteria
+    """
+    try:
+        classifier = StockClassifier()
+        
+        # Scan market first
+        df = classifier.scan_and_classify_market(exchanges=['HOSE'], limit=limit, delay=3.0)
+        
+        if df.empty:
+            return {
+                "success": False,
+                "error": "No stocks to filter",
+                "timestamp": datetime.now().isoformat()
+            }
+        
+        # Apply filters
+        df_filtered = classifier.get_stocks_by_filter(
+            df,
+            growth=growth,
+            risk=risk,
+            rating=rating,
+            min_score=min_score
+        )
+        
+        return {
+            "success": True,
+            "filters": {
+                "growth": growth,
+                "risk": risk,
+                "rating": rating,
+                "min_score": min_score
+            },
+            "total_found": len(df_filtered),
+            "stocks": df_filtered.to_dict('records'),
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error filtering stocks: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+@app.get("/classify/top-picks")
+async def get_top_picks(
+    count: int = Query(10, description="Number of top picks"),
+    min_rating: str = Query('B', description="Minimum rating (A+, A, B, C)"),
+    max_risk: str = Query('medium_risk', description="Maximum risk level")
+):
+    """
+    Lấy danh sách cổ phiếu top picks (tốt nhất)
+    
+    Returns:
+        Top rated stocks with detailed analysis
+    """
+    try:
+        classifier = StockClassifier()
+        
+        # Scan HOSE (top 100)
+        df = classifier.scan_and_classify_market(exchanges=['HOSE'], limit=100, delay=3.0)
+        
+        if df.empty:
+            return {
+                "success": False,
+                "error": "No stocks available",
+                "timestamp": datetime.now().isoformat()
+            }
+        
+        # Filter by criteria
+        rating_order = {'A+': 6, 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'F': 1}
+        min_rating_value = rating_order.get(min_rating, 3)
+        
+        df['rating_value'] = df['overall_rating'].map(rating_order)
+        df_filtered = df[
+            (df['rating_value'] >= min_rating_value) &
+            (df['risk_category'] <= max_risk)
+        ]
+        
+        # Get top picks
+        top_picks = df_filtered.nlargest(count, 'overall_score')
+        
+        return {
+            "success": True,
+            "criteria": {
+                "min_rating": min_rating,
+                "max_risk": max_risk,
+                "count": count
+            },
+            "total_candidates": len(df_filtered),
+            "top_picks": top_picks[[
+                'symbol', 'overall_rating', 'overall_score',
+                'growth_category', 'risk_category', 'recommendation'
+            ]].to_dict('records'),
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting top picks: {e}")
         return {
             "success": False,
             "error": str(e),
