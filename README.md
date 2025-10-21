@@ -6,13 +6,15 @@
 
 - **📊 Thu thập dữ liệu toàn diện**: 15+ năm dữ liệu lịch sử (3,940+ bản ghi) + 17+ năm báo cáo tài chính (51 báo cáo)
 - **🔗 API RESTful hoàn chỉnh**: Tích hợp dễ dàng với n8n, AI agents và các hệ thống khác
-- **📈 Dashboard trực quan**: Web UI với biểu đồ nến, khối lượng và metrics tương tác (Streamlit + Plotly)
+- **📈 Dashboard trực quan**: 
+  - **Basic**: Biểu đồ nến, khối lượng và metrics (port 8502)
+  - **Advanced**: Technical indicators, Multi-stock comparison, FA/TA analysis, Watchlist, Price alerts (port 8503)
 - **🤖 Tối ưu cho AI**: Cấu trúc JSON rõ ràng, metadata phong phú, gợi ý phân tích tự động
 - **⚡ Hiệu suất cao**: Không giới hạn thời gian hay số lượng bản ghi, dữ liệu real-time
 - **🛡️ Ổn định**: Logging chi tiết, error handling, health check endpoint
 - **🐳 Dễ triển khai**: Docker support, virtual environment, one-command setup
 - **💰 Đơn vị tiền tệ VND chính xác**: Không làm tròn để tránh sai số, metadata đầy đủ cho currency tracking
-- **🧮 Phân tích nâng cao**: FA (P/E, ROE), TA (MA, RSI), Stock Screener, Backtesting
+- **🧮 Phân tích nâng cao**: FA (P/E, ROE), TA (MA, RSI, MACD, BB), Stock Screener, Backtesting
 
 ## 📊 Dữ liệu thu thập (Toàn diện & Không giới hạn)
 
@@ -96,13 +98,14 @@ docker run -p 8501:8501 vnstock-collector
 
 **Server sẽ chạy tại**: 
 - **API Server**: `http://localhost:8501`
-- **Dashboard**: `http://localhost:8502`
+- **Dashboard Basic**: `http://localhost:8502`
+- **Dashboard Advanced**: `http://localhost:8503`
 
 ## 📊 VNStock Dashboard
 
-### 🎨 Tính năng Dashboard
+### 🎨 Dashboard Basic (Port 8502)
 
-Dashboard cung cấp giao diện web trực quan để phân tích cổ phiếu:
+Dashboard cơ bản với tính năng trực quan hóa:
 
 - **📈 Biểu đồ nến (Candlestick)**: Hiển thị OHLC với zoom/pan tương tác
 - **📊 Khối lượng giao dịch**: Biểu đồ cột với màu sắc theo xu hướng
@@ -110,32 +113,65 @@ Dashboard cung cấp giao diện web trực quan để phân tích cổ phiếu:
 - **📋 Dữ liệu chi tiết**: Bảng dữ liệu có thể export CSV
 - **📈 Thống kê**: Volatility, tổng khối lượng, số phiên giao dịch
 
-### 🚀 Khởi chạy Dashboard
+```bash
+# Khởi chạy Basic Dashboard
+python start_dashboard.py
+```
+
+Chi tiết: [DASHBOARD_GUIDE.md](DASHBOARD_GUIDE.md)
+
+### 🚀 Dashboard Advanced (Port 8503) - NEW!
+
+Dashboard nâng cao với đầy đủ tính năng phân tích chuyên nghiệp:
+
+#### ✨ Technical Analysis
+- **Moving Averages**: MA20, MA50, MA200, EMA12
+- **RSI (14)**: Với vùng overbought/oversold
+- **MACD**: Histogram và signal line
+- **Bollinger Bands**: Upper/Lower bands
+- **Multi-indicator charts**: Subplots với nhiều indicators
+
+#### 📊 Multi-Stock Comparison
+- So sánh **đồng thời 6 mã cổ phiếu**
+- Normalized chart (base = 100)
+- Performance summary table
+- Side-by-side metrics
+
+#### 🧮 FA/TA Integration
+- **Fundamental Analysis**: P/E, ROE, NPM, D/E
+- **Technical Signals**: Trend + Momentum
+- **Overall Rating**: Bullish/Bearish/Neutral
+- **API Integration**: Real-time từ backend
+
+#### ⭐ Personal Watchlist
+- Lưu danh sách mã yêu thích
+- Real-time price tracking
+- Quick add/remove
+- Session-based storage
+
+#### 🔔 Price Alerts
+- Thiết lập alerts khi giá đạt ngưỡng
+- Điều kiện: Above/Below
+- Auto-notification
+- Multi-alert management
 
 ```bash
-# Activate virtual environment
-source venv/bin/activate
+# Khởi chạy Advanced Dashboard
+python start_dashboard_advanced.py
 
-# Chạy dashboard
-python start_dashboard.py
-
-# Hoặc chạy trực tiếp
-streamlit run dashboard.py --server.port=8502 --server.address=0.0.0.0
+# Hoặc chạy cả hai
+python start_server.py &           # API Server (port 8501)
+python start_dashboard.py &         # Basic Dashboard (port 8502)
+python start_dashboard_advanced.py  # Advanced Dashboard (port 8503)
 ```
 
 ### 🌐 Truy cập Dashboard
 
-- **Local**: `http://localhost:8502`
-- **Network**: `http://192.168.1.4:8502` (từ máy khác trong mạng)
+- **Basic**: `http://localhost:8502`
+- **Advanced**: `http://localhost:8503`
+- **Network**: `http://192.168.1.4:8502` và `http://192.168.1.4:8503`
 
-### 📖 Hướng dẫn sử dụng Dashboard
-
-1. **Nhập mã cổ phiếu** (VD: ACB, VIC, FPT, TCB)
-2. **Chọn khoảng thời gian** (30 ngày - 3 năm)
-3. **Nhấn "Tải dữ liệu"**
-4. **Phân tích** biểu đồ và metrics
-
-Chi tiết đầy đủ: Xem file [DASHBOARD_GUIDE.md](DASHBOARD_GUIDE.md)
+Chi tiết đầy đủ: [DASHBOARD_ADVANCED_GUIDE.md](DASHBOARD_ADVANCED_GUIDE.md)
 
 ## 📖 API Documentation
 
@@ -412,8 +448,10 @@ vnstock-data-collector/
 ├── 📄 main.py                          # FastAPI server chính
 ├── 📄 vnstock_data_collector_simple.py # Data collector engine
 ├── 📄 start_server.py                  # Script khởi chạy API
-├── 📄 dashboard.py                     # Streamlit dashboard
-├── 📄 start_dashboard.py               # Script khởi chạy Dashboard
+├── 📄 dashboard.py                     # Streamlit dashboard basic
+├── 📄 start_dashboard.py               # Script khởi chạy Dashboard Basic
+├── 📄 dashboard_advanced.py            # Streamlit dashboard advanced (NEW!)
+├── 📄 start_dashboard_advanced.py      # Script khởi chạy Dashboard Advanced (NEW!)
 ├── 📄 fa_calculator.py                 # Fundamental Analysis module
 ├── 📄 ta_analyzer.py                   # Technical Analysis module
 ├── 📄 stock_screener.py                # Stock Screener module
@@ -423,7 +461,8 @@ vnstock-data-collector/
 ├── 📄 requirements.txt                 # Dependencies
 ├── 📄 n8n_workflow_example.json        # n8n workflow mẫu
 ├── 📄 README.md                        # Documentation chính
-├── 📄 DASHBOARD_GUIDE.md               # Dashboard documentation
+├── 📄 DASHBOARD_GUIDE.md               # Dashboard Basic documentation
+├── 📄 DASHBOARD_ADVANCED_GUIDE.md      # Dashboard Advanced documentation (NEW!)
 ├── 📄 FA_ANALYSIS_GUIDE.md             # FA documentation
 ├── 📄 DOCKER_DEPLOYMENT.md             # Docker deployment guide
 ├── 📄 .gitignore                       # Git ignore rules
