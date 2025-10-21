@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Comprehensive Testing Suite - VNStock
 Test all modules and features
@@ -315,13 +316,14 @@ def test_advanced_indicators():
         
         # Create mock OHLCV data
         dates = pd.date_range(start='2024-01-01', periods=100, freq='D')
+        close_prices = np.random.uniform(23000, 27000, 100)
         df = pd.DataFrame({
             'time': dates,
-            'open': np.random.uniform(23000, 27000, 100),
-            'high': np.random.uniform(24000, 28000, 100),
-            'low': np.random.uniform(22000, 26000, 100),
-            'close': np.random.uniform(23000, 27000, 100),
-            'volume': np.random.uniform(1000000, 5000000, 100)
+            'Open': close_prices * (1 + np.random.uniform(-0.02, 0.02, 100)),
+            'High': close_prices * (1 + np.random.uniform(0, 0.05, 100)),
+            'Low': close_prices * (1 - np.random.uniform(0, 0.05, 100)),
+            'Close': close_prices,
+            'Volume': np.random.uniform(1000000, 5000000, 100)
         })
         df.set_index('time', inplace=True)
         

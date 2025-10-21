@@ -107,7 +107,7 @@ class NewsAnalyzer:
                 {
                     'title': f'Cổ đông lớn của {symbol} đăng ký bán 5 triệu cổ phiếu',
                     'summary': f'Theo thông báo từ HOSE, cổ đông lớn của {symbol} dự kiến bán...',
-                    'url': f'https://cafef.vn/{symbol.lower()-ban-co-phieu',
+                    'url': f'https://cafef.vn/{symbol.lower()}-ban-co-phieu',
                     'source': 'cafef',
                     'published_date': base_date - timedelta(days=5),
                     'category': 'insider_trading'
