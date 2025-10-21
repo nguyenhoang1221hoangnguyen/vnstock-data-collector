@@ -18,6 +18,9 @@ import requests
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# API URL
+API_URL = "http://localhost:8501"
+
 # Cấu hình trang
 st.set_page_config(
     page_title="VNStock Advanced Dashboard",
