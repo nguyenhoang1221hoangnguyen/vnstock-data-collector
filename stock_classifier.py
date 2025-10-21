@@ -141,12 +141,18 @@ class StockClassifier:
     
     def classify_growth_potential(self, fa_data: Dict) -> Dict:
         """Phân loại tiềm năng tăng trưởng"""
+        logger.info(f"classify_growth_potential - INPUT fa_data keys: {list(fa_data.keys())}")
+        logger.info(f"classify_growth_potential - INPUT fa_data: {fa_data}")
         ratios = fa_data.get('ratios', {})
+        logger.info(f"classify_growth_potential - ratios extracted: {ratios}")
+        logger.debug(f"classify_growth_potential - ratios keys: {list(ratios.keys())}")
+        logger.debug(f"classify_growth_potential - ratios values: {ratios}")
         
         # FA API returns uppercase keys: ROE, PE, NPM, DE
         roe = ratios.get('ROE') or ratios.get('roe', 0)
         pe = ratios.get('PE') or ratios.get('pe_ratio', 0) or ratios.get('pe', 0)
         npm = ratios.get('NPM') or ratios.get('net_profit_margin', 0) or ratios.get('npm', 0)
+        logger.info(f"classify_growth_potential - Parsed: ROE={roe}, PE={pe}, NPM={npm}")
         
         # Scoring logic
         if roe > 20 and (pe == 0 or (pe > 0 and pe < 25)) and npm > 15:
@@ -190,6 +196,7 @@ class StockClassifier:
         # FA API returns uppercase keys: ROE, PE, NPM, DE
         roe = ratios.get('ROE') or ratios.get('roe', 0)
         de = ratios.get('DE') or ratios.get('de_ratio', 0) or ratios.get('de', 0)
+        logger.info(f"classify_risk_level - Parsed: ROE={roe}, DE={de}, Volatility={volatility}")
         
         # Risk scoring
         if volatility < 20 and de < 1 and roe > 15:
@@ -317,6 +324,8 @@ class StockClassifier:
             
             # Get FA data
             fa_data = calculate_fa_ratios(symbol)
+            logger.info(f"FA data for {symbol}: FULL fa_data={fa_data}")
+            logger.info(f"FA data for {symbol}: ratios={fa_data.get('ratios')}")
             
             if 'error' in fa_data:
                 result['error'] = fa_data['error']

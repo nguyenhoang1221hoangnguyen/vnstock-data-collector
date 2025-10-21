@@ -1,0 +1,2 @@
+INFO:     Will watch for changes in these directories: ['/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2']
+ERROR:    [Errno 48] Address already in use
