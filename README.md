@@ -6,9 +6,7 @@
 
 - **📊 Thu thập dữ liệu toàn diện**: 15+ năm dữ liệu lịch sử (3,940+ bản ghi) + 17+ năm báo cáo tài chính (51 báo cáo)
 - **🔗 API RESTful hoàn chỉnh**: Tích hợp dễ dàng với n8n, AI agents và các hệ thống khác
-- **📈 Dashboard trực quan**: 
-  - **Basic**: Biểu đồ nến, khối lượng và metrics (port 8502)
-  - **Advanced**: Technical indicators, Multi-stock comparison, FA/TA analysis, Watchlist, Price alerts (port 8503)
+- **📈 Dashboard chuyên nghiệp**: Technical indicators, Multi-stock comparison, FA/TA analysis, Watchlist, Price alerts, Stock Screener (port 8502)
 - **🤖 Tối ưu cho AI**: Cấu trúc JSON rõ ràng, metadata phong phú, gợi ý phân tích tự động
 - **⚡ Hiệu suất cao**: Không giới hạn thời gian hay số lượng bản ghi, dữ liệu real-time
 - **🛡️ Ổn định**: Logging chi tiết, error handling, health check endpoint
@@ -68,7 +66,7 @@ python setup.py
 python start_server.py
 
 # Khởi chạy Dashboard (optional)
-python start_dashboard.py
+python start_dashboard_advanced.py
 ```
 
 ### 🐍 **Cách 2: Manual setup**
@@ -86,7 +84,7 @@ pip install -r requirements.txt
 python start_server.py
 
 # Khởi chạy Dashboard (optional, terminal mới)
-python start_dashboard.py
+python start_dashboard_advanced.py
 ```
 
 ### 🐳 **Cách 3: Docker (Coming soon)**
@@ -98,29 +96,11 @@ docker run -p 8501:8501 vnstock-collector
 
 **Server sẽ chạy tại**: 
 - **API Server**: `http://localhost:8501`
-- **Dashboard Basic**: `http://localhost:8502`
-- **Dashboard Advanced**: `http://localhost:8503`
+- **Advanced Dashboard**: `http://localhost:8502`
 
-## 📊 VNStock Dashboard
+## 📊 VNStock Advanced Dashboard
 
-### 🎨 Dashboard Basic (Port 8502)
-
-Dashboard cơ bản với tính năng trực quan hóa:
-
-- **📈 Biểu đồ nến (Candlestick)**: Hiển thị OHLC với zoom/pan tương tác
-- **📊 Khối lượng giao dịch**: Biểu đồ cột với màu sắc theo xu hướng
-- **💹 Metrics real-time**: Giá hiện tại, cao/thấp nhất, biến động
-- **📋 Dữ liệu chi tiết**: Bảng dữ liệu có thể export CSV
-- **📈 Thống kê**: Volatility, tổng khối lượng, số phiên giao dịch
-
-```bash
-# Khởi chạy Basic Dashboard
-python start_dashboard.py
-```
-
-Chi tiết: [DASHBOARD_GUIDE.md](DASHBOARD_GUIDE.md)
-
-### 🚀 Dashboard Advanced (Port 8503) - NEW!
+### 🚀 Dashboard (Port 8502)
 
 Dashboard nâng cao với đầy đủ tính năng phân tích chuyên nghiệp:
 
@@ -156,20 +136,18 @@ Dashboard nâng cao với đầy đủ tính năng phân tích chuyên nghiệp:
 - Multi-alert management
 
 ```bash
-# Khởi chạy Advanced Dashboard
+# Khởi chạy Dashboard
 python start_dashboard_advanced.py
 
-# Hoặc chạy cả hai
+# Hoặc chạy cả hai services
 python start_server.py &           # API Server (port 8501)
-python start_dashboard.py &         # Basic Dashboard (port 8502)
-python start_dashboard_advanced.py  # Advanced Dashboard (port 8503)
+python start_dashboard_advanced.py  # Dashboard (port 8502)
 ```
 
 ### 🌐 Truy cập Dashboard
 
-- **Basic**: `http://localhost:8502`
-- **Advanced**: `http://localhost:8503`
-- **Network**: `http://192.168.1.4:8502` và `http://192.168.1.4:8503`
+- **Dashboard**: `http://localhost:8502`
+- **Network**: `http://192.168.1.4:8502` (từ máy khác trong mạng)
 
 Chi tiết đầy đủ: [DASHBOARD_ADVANCED_GUIDE.md](DASHBOARD_ADVANCED_GUIDE.md)
 
@@ -448,21 +426,28 @@ vnstock-data-collector/
 ├── 📄 main.py                          # FastAPI server chính
 ├── 📄 vnstock_data_collector_simple.py # Data collector engine
 ├── 📄 start_server.py                  # Script khởi chạy API
-├── 📄 dashboard.py                     # Streamlit dashboard basic
-├── 📄 start_dashboard.py               # Script khởi chạy Dashboard Basic
-├── 📄 dashboard_advanced.py            # Streamlit dashboard advanced (NEW!)
-├── 📄 start_dashboard_advanced.py      # Script khởi chạy Dashboard Advanced (NEW!)
+├── 📄 dashboard_advanced.py            # Streamlit dashboard (6 tabs)
+├── 📄 start_dashboard_advanced.py      # Script khởi chạy Dashboard
 ├── 📄 fa_calculator.py                 # Fundamental Analysis module
 ├── 📄 ta_analyzer.py                   # Technical Analysis module
+├── 📄 advanced_indicators.py           # 15+ Advanced TA indicators
 ├── 📄 stock_screener.py                # Stock Screener module
+├── 📄 stock_classifier.py              # Stock Classification module
+├── 📄 bluechip_detector.py             # Blue-chip Detector module
 ├── 📄 backtesting_strategy.py          # Backtesting module
+├── 📄 portfolio_manager.py             # Portfolio Management
+├── 📄 news_sentiment.py                # News & Sentiment Analysis
+├── 📄 notifications.py                 # Multi-channel Notifications
+├── 📄 drawing_tools.py                 # Chart Drawing Tools
+├── 📄 database.py                      # SQLite Database Manager
 ├── 📄 setup.py                         # Auto setup script
-├── 📄 test_api.py                      # API testing script
 ├── 📄 requirements.txt                 # Dependencies
 ├── 📄 n8n_workflow_example.json        # n8n workflow mẫu
 ├── 📄 README.md                        # Documentation chính
-├── 📄 DASHBOARD_GUIDE.md               # Dashboard Basic documentation
-├── 📄 DASHBOARD_ADVANCED_GUIDE.md      # Dashboard Advanced documentation (NEW!)
+├── 📄 ACCURATE_USER_GUIDE.md           # Hướng dẫn chính xác hệ thống
+├── 📄 COMPLETE_FEATURES_GUIDE.md       # Hướng dẫn đầy đủ tất cả tính năng
+├── 📄 DASHBOARD_ADVANCED_GUIDE.md      # Dashboard documentation
+├── 📄 CLASSIFICATION_GUIDE.md          # Stock Classification guide
 ├── 📄 FA_ANALYSIS_GUIDE.md             # FA documentation
 ├── 📄 DOCKER_DEPLOYMENT.md             # Docker deployment guide
 ├── 📄 .gitignore                       # Git ignore rules
