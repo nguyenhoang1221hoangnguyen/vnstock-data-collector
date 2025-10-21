@@ -143,9 +143,10 @@ class StockClassifier:
         """Phân loại tiềm năng tăng trưởng"""
         ratios = fa_data.get('ratios', {})
         
-        roe = ratios.get('roe', 0)
-        pe = ratios.get('pe_ratio', 0)
-        npm = ratios.get('net_profit_margin', 0)
+        # FA API returns uppercase keys: ROE, PE, NPM, DE
+        roe = ratios.get('ROE') or ratios.get('roe', 0)
+        pe = ratios.get('PE') or ratios.get('pe_ratio', 0) or ratios.get('pe', 0)
+        npm = ratios.get('NPM') or ratios.get('net_profit_margin', 0) or ratios.get('npm', 0)
         
         # Scoring logic
         if roe > 20 and (pe == 0 or (pe > 0 and pe < 25)) and npm > 15:
@@ -186,8 +187,9 @@ class StockClassifier:
         """Phân loại mức độ rủi ro"""
         ratios = fa_data.get('ratios', {})
         
-        roe = ratios.get('roe', 0)
-        de = ratios.get('de_ratio', 0)
+        # FA API returns uppercase keys: ROE, PE, NPM, DE
+        roe = ratios.get('ROE') or ratios.get('roe', 0)
+        de = ratios.get('DE') or ratios.get('de_ratio', 0) or ratios.get('de', 0)
         
         # Risk scoring
         if volatility < 20 and de < 1 and roe > 15:
