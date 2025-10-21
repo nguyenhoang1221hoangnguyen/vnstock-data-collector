@@ -939,7 +939,11 @@ def main():
                             "delay": 3.0
                         }
                         
-                        response = requests.get(url, params=params, timeout=scan_limit * 10)
+                        # Calculate timeout: each stock takes ~4 seconds (API + delay)
+                        # Add 50% buffer for safety
+                        timeout_seconds = int(scan_limit * 4 * 1.5)
+                        
+                        response = requests.get(url, params=params, timeout=timeout_seconds)
                         
                         if response.status_code == 200:
                             data = response.json()
