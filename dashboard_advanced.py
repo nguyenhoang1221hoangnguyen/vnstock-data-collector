@@ -936,12 +936,16 @@ def main():
                         params = {
                             "exchanges": ",".join(exchanges),
                             "limit": scan_limit,
-                            "delay": 5.0  # Increased from 3.0 to 5.0 to avoid rate limits
+                            "delay": scan_delay  # Use delay from UI
                         }
                         
-                        # Calculate timeout: each stock takes ~4 seconds (API + delay)
-                        # Add 50% buffer for safety
-                        timeout_seconds = int(scan_limit * 4 * 1.5)
+                        # Calculate timeout: each stock takes (API processing + delay)
+                        # API processing: ~4s, User delay: from UI, Buffer: 50%
+                        estimated_time_per_stock = 4 + scan_delay  # API + delay
+                        timeout_seconds = int(scan_limit * estimated_time_per_stock * 1.5)
+                        
+                        st.info(f"⏱️ Estimated time: {scan_limit} stocks × {estimated_time_per_stock}s = {scan_limit * estimated_time_per_stock}s")
+                        st.info(f"🕐 Timeout set to: {timeout_seconds}s (with 50% buffer)")
                         
                         response = requests.get(url, params=params, timeout=timeout_seconds)
                         
