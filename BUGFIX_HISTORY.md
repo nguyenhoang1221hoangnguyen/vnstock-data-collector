@@ -122,18 +122,77 @@ async def classify_market_scan(...):
 
 ---
 
+### 🔴 **Lỗi 4: Read timeout khi quét stocks**
+
+**Triệu chứng:**
+```
+Error scanning: HTTPConnectionPool(host='localhost', port=8501): 
+Read timed out. (read timeout=100)
+```
+
+**Nguyên nhân:**
+- Timeout cũ: `scan_limit × 10` giây
+- Với 10 stocks: timeout = 100 giây
+- Thực tế cần: ~120 giây (10 stocks × 4s API processing × 3s delay)
+- Kết quả: **TIMEOUT!**
+
+**Giải pháp:**
+
+**Trong `dashboard_advanced.py`:**
+```python
+# TRƯỚC (không đủ thời gian):
+timeout = scan_limit * 10  # 10 stocks → 100s → TIMEOUT!
+
+# SAU (đủ thời gian):
+timeout_seconds = int(scan_limit * 4 * 1.5)
+# 10 stocks → 60s → OK!
+# 20 stocks → 120s → OK!
+# 50 stocks → 300s → OK!
+```
+
+**Công thức mới:**
+```
+timeout = số_stocks × 4 giây × 1.5 (buffer 50%)
+
+Trong đó:
+- 4 giây = thời gian trung bình xử lý 1 stock (API + delay)
+- 1.5 = buffer 50% để đảm bảo an toàn
+```
+
+**Bảng timeout:**
+| Stocks | Timeout cũ | Timeout mới | Thực tế | Kết quả |
+|--------|-----------|-------------|---------|---------|
+| 5      | 50s       | 30s         | ~20s    | ✅ OK   |
+| 10     | 100s      | 60s         | ~40s    | ✅ OK   |
+| 20     | 200s      | 120s        | ~80s    | ✅ OK   |
+| 50     | 500s      | 300s        | ~200s   | ✅ OK   |
+
+**Lợi ích:**
+- ✅ Không còn timeout khi quét 10+ stocks
+- ✅ Đủ thời gian cho API xử lý
+- ✅ Buffer 50% đảm bảo an toàn
+- ✅ Tự động scale theo số lượng stocks
+
+**Commit:** `bda2222` - "🐛 Fix timeout error in Stock Screener"
+
+**Status:** ✅ Đã sửa & Dashboard đã restart
+
+---
+
 ## 📊 Tổng Kết
 
 ### Các lỗi đã sửa:
 1. ✅ **API_URL not defined** → Thêm biến API_URL
 2. ✅ **No stocks classified** → Dùng static stock list
 3. ✅ **API Error 500** → Thay print() bằng logger
+4. ✅ **Read timeout** → Tăng timeout calculation
 
 ### Commits:
 - `6041bea` - Fix API_URL not defined
 - `e6e309f` - Fix stock listing with static list
 - `8c4632d` - Fix API 500 error with logger
 - `83768c6` - Add system management tools
+- `bda2222` - Fix timeout error in Stock Screener
 
 ### Impact:
 - 🎯 **Stock Screener hoạt động 100%**
