@@ -14,6 +14,7 @@ import logging
 from vnstock_data_collector_simple import VNStockDataCollector
 from fa_calculator import calculate_fa_ratios, get_fa_interpretation
 from ta_analyzer import calculate_ta_indicators, plot_technical_chart, get_ta_analysis
+from stock_screener import get_stock_list, screen_stock, run_screener
 
 # Cấu hình logging
 logging.basicConfig(level=logging.INFO)
@@ -70,6 +71,9 @@ async def root():
             "/stock/{symbol}/ta": "Phân tích kỹ thuật (TA) - Tính toán chỉ báo",
             "/stock/{symbol}/ta/analyze": "Phân tích TA với diễn giải tín hiệu",
             "/stock/{symbol}/ta/chart": "Vẽ biểu đồ kỹ thuật (candlestick + indicators)",
+            "/screener/list": "Lấy danh sách cổ phiếu theo sàn",
+            "/screener/screen": "Sàng lọc cổ phiếu theo tiêu chí FA + TA",
+            "/screener/{symbol}": "Kiểm tra một mã cổ phiếu với tiêu chí",
             "/health": "Kiểm tra trạng thái API"
         }
     }
@@ -493,6 +497,142 @@ async def generate_ta_chart(
         raise
     except Exception as e:
         logger.error(f"Lỗi khi vẽ biểu đồ TA cho {symbol}: {str(e)}")
+        return StockResponse(
+            success=False,
+            error=str(e),
+            timestamp=datetime.now().isoformat()
+        )
+
+@app.get("/screener/list")
+async def get_stock_list_endpoint(
+    exchange: Optional[str] = Query("HOSE", description="Sàn giao dịch (HOSE, HNX, UPCOM)")
+):
+    """
+    Lấy danh sách tất cả cổ phiếu trên sàn
+    
+    - **exchange**: Sàn giao dịch (HOSE, HNX, UPCOM)
+    
+    Trả về:
+    - Danh sách mã cổ phiếu
+    - Tổng số mã
+    """
+    try:
+        logger.info(f"Lấy danh sách cổ phiếu sàn {exchange}")
+        stock_list = get_stock_list(exchange)
+        
+        return StockResponse(
+            success=True,
+            data={
+                "exchange": exchange,
+                "total_stocks": len(stock_list),
+                "stocks": stock_list
+            },
+            timestamp=datetime.now().isoformat()
+        )
+        
+    except Exception as e:
+        logger.error(f"Lỗi khi lấy danh sách cổ phiếu: {str(e)}")
+        return StockResponse(
+            success=False,
+            error=str(e),
+            timestamp=datetime.now().isoformat()
+        )
+
+@app.get("/screener/{symbol}")
+async def screen_single_stock(
+    symbol: str,
+    pe_max: Optional[float] = Query(15, description="P/E tối đa"),
+    roe_min: Optional[float] = Query(18, description="ROE tối thiểu %"),
+    price_vs_ma50: Optional[str] = Query("above", description="Giá so với MA50 (above/below)")
+):
+    """
+    Kiểm tra một mã cổ phiếu với các tiêu chí sàng lọc
+    
+    - **symbol**: Mã cổ phiếu
+    - **pe_max**: P/E tối đa (mặc định 15)
+    - **roe_min**: ROE tối thiểu % (mặc định 18)
+    - **price_vs_ma50**: Giá so với MA50 (above/below)
+    
+    Trả về:
+    - Thông tin FA, TA
+    - Kết quả kiểm tra từng tiêu chí
+    - Kết quả tổng thể (passed/failed)
+    """
+    try:
+        if not symbol or len(symbol.strip()) == 0:
+            raise HTTPException(status_code=400, detail="Mã cổ phiếu không được để trống")
+        
+        logger.info(f"Sàng lọc mã {symbol}")
+        result = screen_stock(symbol, pe_max, roe_min, price_vs_ma50)
+        
+        return StockResponse(
+            success=True,
+            data=result,
+            timestamp=datetime.now().isoformat()
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Lỗi khi sàng lọc {symbol}: {str(e)}")
+        return StockResponse(
+            success=False,
+            error=str(e),
+            timestamp=datetime.now().isoformat()
+        )
+
+@app.get("/screener/screen")
+async def run_stock_screener(
+    exchange: Optional[str] = Query("HOSE", description="Sàn giao dịch"),
+    limit: Optional[int] = Query(20, description="Số lượng mã test"),
+    pe_max: Optional[float] = Query(15, description="P/E tối đa"),
+    roe_min: Optional[float] = Query(18, description="ROE tối thiểu %"),
+    price_vs_ma50: Optional[str] = Query("above", description="Giá so với MA50"),
+    delay: Optional[float] = Query(1.0, description="Delay giữa các request (giây)")
+):
+    """
+    Sàng lọc nhiều cổ phiếu theo tiêu chí FA + TA
+    
+    - **exchange**: Sàn giao dịch (HOSE, HNX, UPCOM)
+    - **limit**: Số lượng mã test (mặc định 20)
+    - **pe_max**: P/E tối đa (mặc định 15)
+    - **roe_min**: ROE tối thiểu % (mặc định 18)
+    - **price_vs_ma50**: Giá so với MA50 (above/below)
+    - **delay**: Delay giữa các request (giây)
+    
+    Trả về:
+    - Tổng số mã đã sàng lọc
+    - Số mã đạt tiêu chí
+    - Danh sách mã đạt tiêu chí
+    - Chi tiết từng mã
+    """
+    try:
+        logger.info(f"Chạy stock screener cho sàn {exchange}")
+        
+        results = run_screener(
+            exchange=exchange,
+            limit=limit,
+            pe_max=pe_max,
+            roe_min=roe_min,
+            price_vs_ma50=price_vs_ma50,
+            delay=delay
+        )
+        
+        if not results.get("success"):
+            return StockResponse(
+                success=False,
+                error=results.get("error", "Unknown error"),
+                timestamp=datetime.now().isoformat()
+            )
+        
+        return StockResponse(
+            success=True,
+            data=results,
+            timestamp=datetime.now().isoformat()
+        )
+        
+    except Exception as e:
+        logger.error(f"Lỗi khi chạy screener: {str(e)}")
         return StockResponse(
             success=False,
             error=str(e),
