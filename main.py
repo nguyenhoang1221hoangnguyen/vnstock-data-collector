@@ -876,19 +876,24 @@ async def classify_market_scan(
         DataFrame of classified stocks with summary statistics
     """
     try:
+        logger.info(f"Starting market scan: exchanges={exchanges}, limit={limit}, delay={delay}")
         classifier = StockClassifier()
         
         # Parse exchanges
         exchange_list = [e.strip().upper() for e in exchanges.split(',')]
+        logger.info(f"Parsed exchanges: {exchange_list}")
         
         # Scan
+        logger.info(f"Starting scan_and_classify_market...")
         df = classifier.scan_and_classify_market(
             exchanges=exchange_list,
             limit=limit,
             delay=delay
         )
+        logger.info(f"Scan complete. DataFrame shape: {df.shape if not df.empty else 'EMPTY'}")
         
         if df.empty:
+            logger.warning("DataFrame is empty - no stocks classified")
             return {
                 "success": False,
                 "error": "No stocks classified successfully",

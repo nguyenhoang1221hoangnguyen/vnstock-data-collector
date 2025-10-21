@@ -410,11 +410,10 @@ class StockClassifier:
         results = []
         errors = []
         
-        print(f"\n🔍 Scanning {len(stocks)} stocks from {exchanges}...\n")
-        print("=" * 70)
+        logger.info(f"Scanning {len(stocks)} stocks from {exchanges}")
         
         for i, symbol in enumerate(stocks, 1):
-            print(f"[{i}/{len(stocks)}] {symbol}...", end=' ')
+            logger.info(f"[{i}/{len(stocks)}] Processing {symbol}...")
             
             try:
                 classification = self.classify_stock(symbol)
@@ -422,25 +421,23 @@ class StockClassifier:
                 if 'error' not in classification or classification['error'] is None:
                     results.append(classification)
                     rating = classification['overall_rating']['rating']
-                    print(f"✅ {rating}")
+                    logger.info(f"  ✅ {symbol}: {rating}")
                 else:
                     errors.append(symbol)
-                    print(f"❌ Error")
+                    logger.warning(f"  ❌ {symbol}: Has error field")
                 
             except Exception as e:
                 errors.append(symbol)
-                print(f"❌ {str(e)[:30]}")
+                logger.error(f"  ❌ {symbol}: {str(e)[:50]}")
             
             # Rate limit protection
             if i < len(stocks):
                 time.sleep(delay)
         
-        print("=" * 70)
-        print(f"\n✅ Completed: {len(results)} stocks classified")
-        print(f"❌ Errors: {len(errors)} stocks")
+        logger.info(f"Scan complete: {len(results)} classified, {len(errors)} errors")
         
         if errors:
-            print(f"Failed symbols: {', '.join(errors[:10])}" + ("..." if len(errors) > 10 else ""))
+            logger.warning(f"Failed symbols: {', '.join(errors[:10])}" + ("..." if len(errors) > 10 else ""))
         
         # Convert to DataFrame
         df = self._results_to_dataframe(results)
