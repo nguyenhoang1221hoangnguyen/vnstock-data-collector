@@ -1,0 +1,29 @@
+{
+  "_comment": "VNStock Notification Configuration",
+  "_instructions": "Copy this file to 'notification_config.json' and fill in your credentials",
+  
+  "enabled_channels": [
+    "telegram"
+  ],
+  
+  "telegram": {
+    "_instructions": "Get bot token from @BotFather on Telegram. Get chat_id from @userinfobot",
+    "bot_token": "YOUR_TELEGRAM_BOT_TOKEN",
+    "chat_id": "YOUR_TELEGRAM_CHAT_ID"
+  },
+  
+  "email": {
+    "_instructions": "For Gmail: Enable 2-factor authentication and create an App Password",
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port": 587,
+    "sender_email": "your_email@gmail.com",
+    "sender_password": "your_app_password",
+    "receiver_email": "your_email@gmail.com"
+  },
+  
+  "discord": {
+    "_instructions": "Create a webhook in Discord Server Settings > Integrations > Webhooks",
+    "webhook_url": "https://discord.com/api/webhooks/YOUR_WEBHOOK_URL"
+  }
+}
+
