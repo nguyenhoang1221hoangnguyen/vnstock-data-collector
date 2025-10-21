@@ -1,0 +1,273 @@
+INFO:     Will watch for changes in these directories: ['/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2']
+INFO:     Uvicorn running on http://0.0.0.0:8501 (Press CTRL+C to quit)
+INFO:     Started reloader process [57943] using StatReload
+INFO:     Started server process [57968]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:59526 - "GET /health HTTP/1.1" 200 OK
+INFO:main:Tính toán FA ratios cho mã: ACB
+INFO:fa_calculator:Bắt đầu tính toán FA ratios cho mã ACB
+INFO:fa_calculator:Lấy giá thị trường...
+INFO:fa_calculator:Giá hiện tại: 25.2 nghìn đồng
+INFO:fa_calculator:Lấy Báo cáo KQKD (4 quý gần nhất)...
+INFO:fa_calculator:Lấy được 4 quý KQKD
+INFO:fa_calculator:Lấy Bảng CĐKT (quý gần nhất)...
+INFO:fa_calculator:Lấy được CĐKT quý gần nhất
+WARNING:fa_calculator:Không tìm thấy số lượng cổ phiếu lưu hành
+WARNING:fa_calculator:Không đủ dữ liệu để tính P/E
+INFO:fa_calculator:ROE: 19.46%
+INFO:fa_calculator:D/E: 9.70
+INFO:fa_calculator:Hoàn thành tính toán FA ratios cho ACB: 2/3 chỉ số
+INFO:     127.0.0.1:59584 - "GET /stock/ACB/fa HTTP/1.1" 200 OK
+INFO:main:Phân tích TA đầy đủ cho mã: ACB
+INFO:ta_analyzer:Phân tích TA toàn diện cho mã ACB
+INFO:ta_analyzer:Bắt đầu phân tích TA cho mã ACB
+INFO:ta_analyzer:Lấy dữ liệu OHLCV từ 2024-10-21 đến 2025-10-21
+INFO:ta_analyzer:Lấy được 250 ngày giao dịch
+INFO:ta_analyzer:Tính toán Moving Averages...
+INFO:ta_analyzer:Tính toán RSI(14)...
+INFO:ta_analyzer:Tính toán MACD...
+INFO:ta_analyzer:Tính toán Bollinger Bands...
+INFO:ta_analyzer:Hoàn thành tính toán TA cho ACB
+INFO:ta_analyzer:Hoàn thành phân tích TA cho ACB
+INFO:     127.0.0.1:59596 - "GET /stock/ACB/ta/analyze HTTP/1.1" 200 OK
+INFO:main:Tính toán FA ratios cho mã: ACB
+INFO:fa_calculator:Bắt đầu tính toán FA ratios cho mã ACB
+INFO:fa_calculator:Lấy giá thị trường...
+INFO:fa_calculator:Giá hiện tại: 25.2 nghìn đồng
+INFO:fa_calculator:Lấy Báo cáo KQKD (4 quý gần nhất)...
+INFO:fa_calculator:Lấy được 4 quý KQKD
+INFO:fa_calculator:Lấy Bảng CĐKT (quý gần nhất)...
+INFO:fa_calculator:Lấy được CĐKT quý gần nhất
+WARNING:fa_calculator:Không tìm thấy số lượng cổ phiếu lưu hành
+WARNING:fa_calculator:Không đủ dữ liệu để tính P/E
+INFO:fa_calculator:ROE: 19.46%
+INFO:fa_calculator:D/E: 9.70
+INFO:fa_calculator:Hoàn thành tính toán FA ratios cho ACB: 2/3 chỉ số
+INFO:     127.0.0.1:59660 - "GET /stock/ACB/fa HTTP/1.1" 200 OK
+INFO:main:Phân tích TA đầy đủ cho mã: ACB
+INFO:ta_analyzer:Phân tích TA toàn diện cho mã ACB
+INFO:ta_analyzer:Bắt đầu phân tích TA cho mã ACB
+INFO:ta_analyzer:Lấy dữ liệu OHLCV từ 2024-10-21 đến 2025-10-21
+INFO:ta_analyzer:Lấy được 250 ngày giao dịch
+INFO:ta_analyzer:Tính toán Moving Averages...
+INFO:ta_analyzer:Tính toán RSI(14)...
+INFO:ta_analyzer:Tính toán MACD...
+INFO:ta_analyzer:Tính toán Bollinger Bands...
+INFO:ta_analyzer:Hoàn thành tính toán TA cho ACB
+INFO:ta_analyzer:Hoàn thành phân tích TA cho ACB
+INFO:     127.0.0.1:59673 - "GET /stock/ACB/ta/analyze HTTP/1.1" 200 OK
+INFO:main:Starting market scan: exchanges=HOSE, limit=20, delay=3.0
+INFO:database:All tables created successfully
+INFO:database:Database initialized: vnstock.db
+INFO:stock_classifier:StockClassifier initialized
+INFO:main:Parsed exchanges: ['HOSE']
+INFO:main:Starting scan_and_classify_market...
+INFO:stock_classifier:Found 91 stocks on ['HOSE']
+INFO:stock_classifier:Scanning 20 stocks from ['HOSE']
+INFO:stock_classifier:[1/20] Processing ITA...
+INFO:stock_classifier:Classifying ITA...
+INFO:fa_calculator:Bắt đầu tính toán FA ratios cho mã ITA
+INFO:fa_calculator:Lấy giá thị trường...
+WARNING:fa_calculator:Không lấy được giá thị trường: RetryError[<Future at 0x125242250 state=finished raised ValueError>]
+INFO:fa_calculator:Lấy Báo cáo KQKD (4 quý gần nhất)...
+INFO:fa_calculator:Lấy được 4 quý KQKD
+INFO:fa_calculator:Lấy Bảng CĐKT (quý gần nhất)...
+INFO:fa_calculator:Lấy được CĐKT quý gần nhất
+INFO:fa_calculator:EPS: 7.60 nghìn đồng
+WARNING:fa_calculator:Không đủ dữ liệu để tính P/E
+INFO:fa_calculator:ROE: 0.67%
+INFO:fa_calculator:Biên lợi nhuận ròng: 15.30%
+INFO:fa_calculator:D/E: 0.18
+INFO:fa_calculator:Hoàn thành tính toán FA ratios cho ITA: 4/5 chỉ số
+INFO:ta_analyzer:Bắt đầu phân tích TA cho mã ITA
+INFO:ta_analyzer:Lấy dữ liệu OHLCV từ 2024-10-21 đến 2025-10-21
+ERROR:ta_analyzer:Lỗi khi tính toán TA cho ITA: RetryError[<Future at 0x1251fab50 state=finished raised ValueError>]
+INFO:stock_classifier:Classified ITA: F
+INFO:stock_classifier:  ✅ ITA: F
+INFO:stock_classifier:[2/20] Processing VHM...
+INFO:stock_classifier:Classifying VHM...
+INFO:fa_calculator:Bắt đầu tính toán FA ratios cho mã VHM
+INFO:fa_calculator:Lấy giá thị trường...
+INFO:fa_calculator:Giá hiện tại: 111.6 nghìn đồng
+INFO:fa_calculator:Lấy Báo cáo KQKD (4 quý gần nhất)...
+INFO:fa_calculator:Lấy được 4 quý KQKD
+INFO:fa_calculator:Lấy Bảng CĐKT (quý gần nhất)...
+INFO:fa_calculator:Lấy được CĐKT quý gần nhất
+INFO:fa_calculator:EPS: 735.80 nghìn đồng
+INFO:fa_calculator:P/E: 0.15
+INFO:fa_calculator:ROE: 13.11%
+INFO:fa_calculator:Biên lợi nhuận ròng: 39.57%
+INFO:fa_calculator:D/E: 1.84
+INFO:fa_calculator:Hoàn thành tính toán FA ratios cho VHM: 5/5 chỉ số
+INFO:ta_analyzer:Bắt đầu phân tích TA cho mã VHM
+INFO:ta_analyzer:Lấy dữ liệu OHLCV từ 2024-10-21 đến 2025-10-21
+INFO:ta_analyzer:Lấy được 250 ngày giao dịch
+INFO:ta_analyzer:Tính toán Moving Averages...
+INFO:ta_analyzer:Tính toán RSI(14)...
+INFO:ta_analyzer:Tính toán MACD...
+INFO:ta_analyzer:Tính toán Bollinger Bands...
+INFO:ta_analyzer:Hoàn thành tính toán TA cho VHM
+INFO:stock_classifier:Classified VHM: F
+INFO:stock_classifier:  ✅ VHM: F
+INFO:stock_classifier:[3/20] Processing STB...
+INFO:stock_classifier:Classifying STB...
+INFO:fa_calculator:Bắt đầu tính toán FA ratios cho mã STB
+INFO:fa_calculator:Lấy giá thị trường...
+INFO:fa_calculator:Giá hiện tại: 54.9 nghìn đồng
+INFO:fa_calculator:Lấy Báo cáo KQKD (4 quý gần nhất)...
+INFO:fa_calculator:Lấy được 4 quý KQKD
+INFO:fa_calculator:Lấy Bảng CĐKT (quý gần nhất)...
+INFO:fa_calculator:Lấy được CĐKT quý gần nhất
+WARNING:fa_calculator:Không tìm thấy số lượng cổ phiếu lưu hành
+WARNING:fa_calculator:Không đủ dữ liệu để tính P/E
+INFO:fa_calculator:ROE: 19.37%
+INFO:fa_calculator:D/E: 12.50
+INFO:fa_calculator:Hoàn thành tính toán FA ratios cho STB: 2/3 chỉ số
+INFO:ta_analyzer:Bắt đầu phân tích TA cho mã STB
+INFO:ta_analyzer:Lấy dữ liệu OHLCV từ 2024-10-21 đến 2025-10-21
+INFO:ta_analyzer:Lấy được 250 ngày giao dịch
+INFO:ta_analyzer:Tính toán Moving Averages...
+INFO:ta_analyzer:Tính toán RSI(14)...
+INFO:ta_analyzer:Tính toán MACD...
+INFO:ta_analyzer:Tính toán Bollinger Bands...
+INFO:ta_analyzer:Hoàn thành tính toán TA cho STB
+INFO:stock_classifier:Classified STB: F
+INFO:stock_classifier:  ✅ STB: F
+INFO:stock_classifier:[4/20] Processing MWG...
+INFO:stock_classifier:Classifying MWG...
+INFO:fa_calculator:Bắt đầu tính toán FA ratios cho mã MWG
+INFO:fa_calculator:Lấy giá thị trường...
+INFO:fa_calculator:Giá hiện tại: 82.1 nghìn đồng
+INFO:fa_calculator:Lấy Báo cáo KQKD (4 quý gần nhất)...
+INFO:fa_calculator:Lấy được 4 quý KQKD
+INFO:fa_calculator:Lấy Bảng CĐKT (quý gần nhất)...
+INFO:fa_calculator:Lấy được CĐKT quý gần nhất
+INFO:fa_calculator:EPS: 327.18 nghìn đồng
+INFO:fa_calculator:P/E: 0.25
+INFO:fa_calculator:ROE: 16.13%
+INFO:fa_calculator:Biên lợi nhuận ròng: 4.38%
+INFO:fa_calculator:D/E: 1.70
+INFO:fa_calculator:Hoàn thành tính toán FA ratios cho MWG: 5/5 chỉ số
+INFO:ta_analyzer:Bắt đầu phân tích TA cho mã MWG
+INFO:ta_analyzer:Lấy dữ liệu OHLCV từ 2024-10-21 đến 2025-10-21
+INFO:ta_analyzer:Lấy được 250 ngày giao dịch
+INFO:ta_analyzer:Tính toán Moving Averages...
+INFO:ta_analyzer:Tính toán RSI(14)...
+INFO:ta_analyzer:Tính toán MACD...
+INFO:ta_analyzer:Tính toán Bollinger Bands...
+INFO:ta_analyzer:Hoàn thành tính toán TA cho MWG
+INFO:stock_classifier:Classified MWG: F
+INFO:stock_classifier:  ✅ MWG: F
+INFO:stock_classifier:[5/20] Processing PDR...
+INFO:stock_classifier:Classifying PDR...
+INFO:fa_calculator:Bắt đầu tính toán FA ratios cho mã PDR
+INFO:fa_calculator:Lấy giá thị trường...
+INFO:fa_calculator:Giá hiện tại: 23.4 nghìn đồng
+INFO:fa_calculator:Lấy Báo cáo KQKD (4 quý gần nhất)...
+INFO:fa_calculator:Lấy được 4 quý KQKD
+INFO:fa_calculator:Lấy Bảng CĐKT (quý gần nhất)...
+INFO:fa_calculator:Lấy được CĐKT quý gần nhất
+INFO:fa_calculator:EPS: 18.55 nghìn đồng
+INFO:fa_calculator:P/E: 1.26
+INFO:fa_calculator:ROE: 1.42%
+INFO:fa_calculator:Biên lợi nhuận ròng: 325.81%
+INFO:fa_calculator:D/E: 1.04
+INFO:fa_calculator:Hoàn thành tính toán FA ratios cho PDR: 5/5 chỉ số
+INFO:ta_analyzer:Bắt đầu phân tích TA cho mã PDR
+INFO:ta_analyzer:Lấy dữ liệu OHLCV từ 2024-10-21 đến 2025-10-21
+INFO:ta_analyzer:Lấy được 250 ngày giao dịch
+INFO:ta_analyzer:Tính toán Moving Averages...
+INFO:ta_analyzer:Tính toán RSI(14)...
+INFO:ta_analyzer:Tính toán MACD...
+INFO:ta_analyzer:Tính toán Bollinger Bands...
+INFO:ta_analyzer:Hoàn thành tính toán TA cho PDR
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/vnai/beam/quota.py", line 247, in wrapper
+    guardian.verify(func.__name__, resource_type)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/vnai/beam/quota.py", line 71, in verify
+    raise RateLimitExceeded(
+    ...<5 lines>...
+    )
+vnai.beam.quota.RateLimitExceeded: Bạn đã gửi quá nhiều request tới VCI. Vui lòng thử lại sau 34 giây.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1133, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/fastapi/routing.py", line 123, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/fastapi/routing.py", line 109, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/fastapi/routing.py", line 389, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/fastapi/routing.py", line 288, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/main.py", line 888, in classify_market_scan
+    df = classifier.scan_and_classify_market(
+        exchanges=exchange_list,
+        limit=limit,
+        delay=delay
+    )
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/stock_classifier.py", line 419, in scan_and_classify_market
+    classification = self.classify_stock(symbol)
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/stock_classifier.py", line 332, in classify_stock
+    market_cap = self.estimate_market_cap(symbol, fa_data)
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/stock_classifier.py", line 128, in estimate_market_cap
+    balance_sheet = stock_obj.finance.balance_sheet(period='quarter', lang='en')
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/vnstock/common/data/data_explorer.py", line 309, in balance_sheet
+    return self._get_financial_data('balance_sheet', symbol, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/vnstock/common/data/data_explorer.py", line 299, in _get_financial_data
+    return method(**processed_kwargs)
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/vnai/beam/quota.py", line 246, in wrapper
+    with CleanErrorContext():
+         ~~~~~~~~~~~~~~~~~^^
+  File "/Users/nguyenhoang/Desktop/2025/hoc-tap code/vscode/VNSTOCK 2/venv/lib/python3.13/site-packages/vnai/beam/quota.py", line 167, in __exit__
+    sys.exit(f"Rate limit exceeded. {str(exc_val)} Process terminated.")
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SystemExit: Rate limit exceeded. Bạn đã gửi quá nhiều request tới VCI. Vui lòng thử lại sau 34 giây. Process terminated.
+
+⚠️ Bạn đã gửi quá nhiều request tới VCI. Vui lòng thử lại sau 34 giây.
+
+INFO:     127.0.0.1:59679 - "GET /classify/market?exchanges=HOSE&limit=20&delay=3.0 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:59699 - "GET /health HTTP/1.1" 200 OK
