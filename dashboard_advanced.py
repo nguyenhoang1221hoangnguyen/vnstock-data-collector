@@ -605,34 +605,60 @@ def main():
                         fa_data = get_fa_data(analysis_symbol)
                         
                         if fa_data and fa_data.get('success'):
-                            try:
-                                ratios = fa_data.get('data', {}).get('ratios', {})
-                                interpretation = fa_data.get('data', {}).get('interpretation', {})
-                                
-                                col1, col2, col3, col4 = st.columns(4)
-                                
-                                with col1:
-                                    pe = ratios.get('PE')
-                                    st.metric("P/E Ratio", f"{pe:.2f}" if pe else "N/A")
-                                
-                                with col2:
-                                    roe = ratios.get('ROE')
-                                    st.metric("ROE", f"{roe:.2f}%" if roe else "N/A")
-                                
-                                with col3:
-                                    npm = ratios.get('net_profit_margin')
-                                    st.metric("NPM", f"{npm:.2f}%" if npm else "N/A")
-                                
-                                with col4:
-                                    de = ratios.get('DE')
-                                    st.metric("D/E", f"{de:.2f}" if de else "N/A")
-                                
-                                if interpretation:
-                                    st.markdown("**Interpretation:**")
-                                    st.info(interpretation.get('summary', 'No interpretation available'))
-                            except Exception as e:
-                                st.error(f"❌ Error parsing FA data: {str(e)}")
-                                logger.error(f"FA data parsing error: {str(e)}")
+                            data = fa_data.get('data', {})
+                            ratios = data.get('ratios', {})
+                            quality = data.get('data_quality', {})
+                            completeness = data.get('completeness', {})
+                            
+                            col1, col2, col3 = st.columns(3)
+                            
+                            with col1:
+                                pe = ratios.get('PE')
+                                if pe:
+                                    st.metric("P/E Ratio", f"{pe:.2f}")
+                                else:
+                                    st.metric("P/E Ratio", "N/A", help=quality.get('PE', 'No data'))
+                            
+                            with col2:
+                                roe = ratios.get('ROE')
+                                if roe:
+                                    st.metric("ROE", f"{roe:.2f}%")
+                                    if roe > 15:
+                                        st.success("✅ Good")
+                                    else:
+                                        st.warning("⚠️ Low")
+                                else:
+                                    st.metric("ROE", "N/A", help=quality.get('ROE', 'No data'))
+                            
+                            with col3:
+                                de = ratios.get('DE')
+                                if de:
+                                    st.metric("D/E", f"{de:.2f}")
+                                    if de < 1:
+                                        st.success("✅ Safe")
+                                    elif de < 2:
+                                        st.info("ℹ️ Moderate")
+                                    else:
+                                        st.warning("⚠️ High")
+                                else:
+                                    st.metric("D/E", "N/A", help=quality.get('DE', 'No data'))
+                            
+                            # Data completeness
+                            st.markdown("**Data Quality:**")
+                            complete_pct = completeness.get('percentage', 0)
+                            st.progress(complete_pct / 100)
+                            st.caption(f"Available ratios: {completeness.get('complete_ratios', 0)}/{completeness.get('total_ratios', 0)} ({complete_pct:.1f}%)")
+                            
+                            # Simple interpretation
+                            st.markdown("**Quick Analysis:**")
+                            if roe and roe > 15 and de and de < 1:
+                                st.success("✅ Strong fundamentals: Good profitability with safe leverage")
+                            elif roe and roe > 15:
+                                st.info("ℹ️ Good profitability, check debt levels")
+                            elif de and de < 1:
+                                st.info("ℹ️ Safe leverage, check profitability")
+                            else:
+                                st.info("ℹ️ Mixed fundamentals, review detailed data")
                         else:
                             st.warning("⚠️ FA data not available (API may be offline)")
                     
@@ -641,42 +667,89 @@ def main():
                         ta_data = get_ta_analysis(analysis_symbol)
                         
                         if ta_data and ta_data.get('success'):
-                            try:
-                                analysis = ta_data.get('data', {})
-                                
-                                col1, col2 = st.columns(2)
+                            data = ta_data.get('data', {})
+                            indicators = data.get('indicators_analysis', {})
+                            signals = data.get('signals', [])
+                            overall = data.get('overall_trend', 'NEUTRAL')
+                            
+                            # Moving Averages
+                            if 'Moving_Averages' in indicators:
+                                ma_data = indicators['Moving_Averages']
+                                st.markdown("**Moving Averages:**")
+                                col1, col2, col3 = st.columns(3)
                                 
                                 with col1:
-                                    st.markdown("**Trend Analysis:**")
-                                    trend_found = False
-                                    for signal in analysis.get('signals', []):
-                                        if signal.get('type') == 'trend':
-                                            st.write(f"• {signal.get('indicator', 'N/A')}: {signal.get('signal', 'N/A')}")
-                                            trend_found = True
-                                    if not trend_found:
-                                        st.write("No trend signals available")
+                                    ma50 = ma_data.get('MA50')
+                                    if ma50:
+                                        st.metric("MA50", f"{ma50:,.0f} VND")
+                                        st.caption(f"Price vs MA50: {ma_data.get('price_vs_MA50', 'N/A')}")
                                 
                                 with col2:
-                                    st.markdown("**Momentum:**")
-                                    momentum_found = False
-                                    for signal in analysis.get('signals', []):
-                                        if signal.get('type') == 'momentum':
-                                            st.write(f"• {signal.get('indicator', 'N/A')}: {signal.get('signal', 'N/A')}")
-                                            momentum_found = True
-                                    if not momentum_found:
-                                        st.write("No momentum signals available")
+                                    ma200 = ma_data.get('MA200')
+                                    if ma200:
+                                        st.metric("MA200", f"{ma200:,.0f} VND")
+                                        st.caption(f"Price vs MA200: {ma_data.get('price_vs_MA200', 'N/A')}")
                                 
-                                st.markdown("**Overall Signal:**")
-                                overall = analysis.get('overall_signal', 'Neutral')
-                                if overall == 'Bullish':
-                                    st.success(f"✅ {overall}")
-                                elif overall == 'Bearish':
-                                    st.error(f"⚠️ {overall}")
+                                with col3:
+                                    if ma_data.get('golden_cross'):
+                                        st.success("✅ Golden Cross")
+                                    else:
+                                        st.info("ℹ️ No Golden Cross")
+                                
+                                st.caption(ma_data.get('interpretation', ''))
+                            
+                            # RSI & MACD
+                            col1, col2 = st.columns(2)
+                            
+                            with col1:
+                                st.markdown("**RSI:**")
+                                if 'RSI' in indicators:
+                                    rsi_data = indicators['RSI']
+                                    rsi_val = rsi_data.get('value')
+                                    if rsi_val:
+                                        st.metric("RSI (14)", f"{rsi_val:.2f}")
+                                        signal = rsi_data.get('signal', 'neutral')
+                                        if signal == 'oversold':
+                                            st.success("✅ Oversold - Buy signal")
+                                        elif signal == 'overbought':
+                                            st.warning("⚠️ Overbought - Sell signal")
+                                        else:
+                                            st.info("ℹ️ Neutral")
+                                        st.caption(rsi_data.get('interpretation', ''))
+                            
+                            with col2:
+                                st.markdown("**MACD:**")
+                                if 'MACD' in indicators:
+                                    macd_data = indicators['MACD']
+                                    macd_val = macd_data.get('macd')
+                                    signal_val = macd_data.get('signal')
+                                    if macd_val is not None and signal_val is not None:
+                                        st.metric("MACD", f"{macd_val:.2f}")
+                                        st.metric("Signal", f"{signal_val:.2f}")
+                                        if macd_data.get('bullish'):
+                                            st.success("✅ Bullish")
+                                        else:
+                                            st.warning("⚠️ Bearish")
+                                        st.caption(macd_data.get('interpretation', ''))
+                            
+                            # Signals
+                            st.markdown("**Signals:**")
+                            for signal in signals:
+                                if 'BULLISH' in signal:
+                                    st.success(f"✅ {signal}")
+                                elif 'BEARISH' in signal:
+                                    st.error(f"⚠️ {signal}")
                                 else:
-                                    st.info(f"ℹ️ {overall}")
-                            except Exception as e:
-                                st.error(f"❌ Error parsing TA data: {str(e)}")
-                                logger.error(f"TA data parsing error: {str(e)}")
+                                    st.info(f"ℹ️ {signal}")
+                            
+                            # Overall Trend
+                            st.markdown("**Overall Trend:**")
+                            if overall == 'BULLISH':
+                                st.success(f"✅ {overall} - {data.get('trend_interpretation', '')}")
+                            elif overall == 'BEARISH':
+                                st.error(f"⚠️ {overall} - {data.get('trend_interpretation', '')}")
+                            else:
+                                st.info(f"ℹ️ {overall} - {data.get('trend_interpretation', '')}")
                         else:
                             st.warning("⚠️ TA data not available (API may be offline)")
     
