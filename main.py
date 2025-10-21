@@ -12,6 +12,7 @@ from datetime import datetime
 import logging
 
 from vnstock_data_collector_simple import VNStockDataCollector
+from fa_calculator import calculate_fa_ratios, get_fa_interpretation
 
 # Cấu hình logging
 logging.basicConfig(level=logging.INFO)
@@ -63,6 +64,8 @@ async def root():
             "/stock/{symbol}/historical": "Lấy dữ liệu lịch sử",
             "/stock/{symbol}/financial": "Lấy dữ liệu tài chính",
             "/stock/{symbol}/market": "Lấy dữ liệu thị trường",
+            "/stock/{symbol}/fa": "Phân tích cơ bản (FA) - Tính toán chỉ số",
+            "/stock/{symbol}/fa/interpret": "Phân tích FA với diễn giải đầy đủ",
             "/health": "Kiểm tra trạng thái API"
         }
     }
@@ -252,6 +255,90 @@ async def get_batch_stock_data(request: StockRequest):
         
     except Exception as e:
         logger.error(f"Lỗi khi xử lý batch request: {str(e)}")
+        return StockResponse(
+            success=False,
+            error=str(e),
+            timestamp=datetime.now().isoformat()
+        )
+
+@app.get("/stock/{symbol}/fa", response_model=StockResponse)
+async def get_fa_ratios(symbol: str):
+    """
+    Phân tích cơ bản (FA) - Tính toán các chỉ số tài chính
+    
+    - **symbol**: Mã cổ phiếu (VD: VIC, VCB, FPT)
+    
+    Trả về các chỉ số:
+    - P/E (Price to Earnings): Giá / Thu nhập
+    - ROE (Return on Equity): Lợi nhuận ròng / Vốn chủ sở hữu
+    - NPM (Net Profit Margin): Biên lợi nhuận ròng
+    - D/E (Debt to Equity): Nợ / Vốn chủ sở hữu
+    - EPS (Earnings Per Share): Thu nhập mỗi cổ phiếu
+    """
+    try:
+        if not symbol or len(symbol.strip()) == 0:
+            raise HTTPException(status_code=400, detail="Mã cổ phiếu không được để trống")
+        
+        logger.info(f"Tính toán FA ratios cho mã: {symbol}")
+        data = calculate_fa_ratios(symbol)
+        
+        return StockResponse(
+            success=True,
+            data=data,
+            timestamp=datetime.now().isoformat()
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Lỗi khi tính FA ratios cho {symbol}: {str(e)}")
+        return StockResponse(
+            success=False,
+            error=str(e),
+            timestamp=datetime.now().isoformat()
+        )
+
+@app.get("/stock/{symbol}/fa/interpret", response_model=StockResponse)
+async def get_fa_interpretation_endpoint(symbol: str):
+    """
+    Phân tích FA với diễn giải đầy đủ
+    
+    - **symbol**: Mã cổ phiếu (VD: VIC, VCB, FPT)
+    
+    Trả về:
+    - Các chỉ số FA
+    - Diễn giải từng chỉ số
+    - Đánh giá tổng thể
+    - Khuyến nghị đầu tư
+    """
+    try:
+        if not symbol or len(symbol.strip()) == 0:
+            raise HTTPException(status_code=400, detail="Mã cổ phiếu không được để trống")
+        
+        logger.info(f"Phân tích FA đầy đủ cho mã: {symbol}")
+        
+        # Tính toán FA ratios
+        fa_ratios = calculate_fa_ratios(symbol)
+        
+        # Diễn giải
+        interpretation = get_fa_interpretation(fa_ratios)
+        
+        # Kết hợp kết quả
+        result = {
+            "fa_ratios": fa_ratios,
+            "interpretation": interpretation
+        }
+        
+        return StockResponse(
+            success=True,
+            data=result,
+            timestamp=datetime.now().isoformat()
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Lỗi khi phân tích FA cho {symbol}: {str(e)}")
         return StockResponse(
             success=False,
             error=str(e),
