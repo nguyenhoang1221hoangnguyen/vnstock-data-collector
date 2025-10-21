@@ -605,29 +605,34 @@ def main():
                         fa_data = get_fa_data(analysis_symbol)
                         
                         if fa_data and fa_data.get('success'):
-                            ratios = fa_data['data']['ratios']
-                            interpretation = fa_data['data']['interpretation']
-                            
-                            col1, col2, col3, col4 = st.columns(4)
-                            
-                            with col1:
-                                pe = ratios.get('PE')
-                                st.metric("P/E Ratio", f"{pe:.2f}" if pe else "N/A")
-                            
-                            with col2:
-                                roe = ratios.get('ROE')
-                                st.metric("ROE", f"{roe:.2f}%" if roe else "N/A")
-                            
-                            with col3:
-                                npm = ratios.get('net_profit_margin')
-                                st.metric("NPM", f"{npm:.2f}%" if npm else "N/A")
-                            
-                            with col4:
-                                de = ratios.get('DE')
-                                st.metric("D/E", f"{de:.2f}" if de else "N/A")
-                            
-                            st.markdown("**Interpretation:**")
-                            st.info(interpretation.get('summary', 'No interpretation available'))
+                            try:
+                                ratios = fa_data.get('data', {}).get('ratios', {})
+                                interpretation = fa_data.get('data', {}).get('interpretation', {})
+                                
+                                col1, col2, col3, col4 = st.columns(4)
+                                
+                                with col1:
+                                    pe = ratios.get('PE')
+                                    st.metric("P/E Ratio", f"{pe:.2f}" if pe else "N/A")
+                                
+                                with col2:
+                                    roe = ratios.get('ROE')
+                                    st.metric("ROE", f"{roe:.2f}%" if roe else "N/A")
+                                
+                                with col3:
+                                    npm = ratios.get('net_profit_margin')
+                                    st.metric("NPM", f"{npm:.2f}%" if npm else "N/A")
+                                
+                                with col4:
+                                    de = ratios.get('DE')
+                                    st.metric("D/E", f"{de:.2f}" if de else "N/A")
+                                
+                                if interpretation:
+                                    st.markdown("**Interpretation:**")
+                                    st.info(interpretation.get('summary', 'No interpretation available'))
+                            except Exception as e:
+                                st.error(f"❌ Error parsing FA data: {str(e)}")
+                                logger.error(f"FA data parsing error: {str(e)}")
                         else:
                             st.warning("⚠️ FA data not available (API may be offline)")
                     
@@ -636,30 +641,42 @@ def main():
                         ta_data = get_ta_analysis(analysis_symbol)
                         
                         if ta_data and ta_data.get('success'):
-                            analysis = ta_data['data']
-                            
-                            col1, col2 = st.columns(2)
-                            
-                            with col1:
-                                st.markdown("**Trend Analysis:**")
-                                for signal in analysis.get('signals', []):
-                                    if signal['type'] == 'trend':
-                                        st.write(f"• {signal['indicator']}: {signal['signal']}")
-                            
-                            with col2:
-                                st.markdown("**Momentum:**")
-                                for signal in analysis.get('signals', []):
-                                    if signal['type'] == 'momentum':
-                                        st.write(f"• {signal['indicator']}: {signal['signal']}")
-                            
-                            st.markdown("**Overall Signal:**")
-                            overall = analysis.get('overall_signal', 'Neutral')
-                            if overall == 'Bullish':
-                                st.success(f"✅ {overall}")
-                            elif overall == 'Bearish':
-                                st.error(f"⚠️ {overall}")
-                            else:
-                                st.info(f"ℹ️ {overall}")
+                            try:
+                                analysis = ta_data.get('data', {})
+                                
+                                col1, col2 = st.columns(2)
+                                
+                                with col1:
+                                    st.markdown("**Trend Analysis:**")
+                                    trend_found = False
+                                    for signal in analysis.get('signals', []):
+                                        if signal.get('type') == 'trend':
+                                            st.write(f"• {signal.get('indicator', 'N/A')}: {signal.get('signal', 'N/A')}")
+                                            trend_found = True
+                                    if not trend_found:
+                                        st.write("No trend signals available")
+                                
+                                with col2:
+                                    st.markdown("**Momentum:**")
+                                    momentum_found = False
+                                    for signal in analysis.get('signals', []):
+                                        if signal.get('type') == 'momentum':
+                                            st.write(f"• {signal.get('indicator', 'N/A')}: {signal.get('signal', 'N/A')}")
+                                            momentum_found = True
+                                    if not momentum_found:
+                                        st.write("No momentum signals available")
+                                
+                                st.markdown("**Overall Signal:**")
+                                overall = analysis.get('overall_signal', 'Neutral')
+                                if overall == 'Bullish':
+                                    st.success(f"✅ {overall}")
+                                elif overall == 'Bearish':
+                                    st.error(f"⚠️ {overall}")
+                                else:
+                                    st.info(f"ℹ️ {overall}")
+                            except Exception as e:
+                                st.error(f"❌ Error parsing TA data: {str(e)}")
+                                logger.error(f"TA data parsing error: {str(e)}")
                         else:
                             st.warning("⚠️ TA data not available (API may be offline)")
     
