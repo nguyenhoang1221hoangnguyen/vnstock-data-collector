@@ -366,16 +366,17 @@ def main():
     
     # Header
     st.title("📊 VNStock Advanced Dashboard")
-    st.markdown("*Technical Indicators • Multi-Stock Comparison • FA/TA Analysis • Watchlist • Price Alerts*")
+    st.markdown("*Technical Indicators • Multi-Stock Comparison • FA/TA Analysis • Watchlist • Price Alerts • Stock Screener*")
     st.markdown("---")
     
     # Tabs
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "📈 Technical Chart",
         "📊 Multi-Stock Comparison", 
         "🧮 FA/TA Analysis",
         "⭐ Watchlist",
-        "🔔 Price Alerts"
+        "🔔 Price Alerts",
+        "🎯 Stock Screener"  # NEW TAB
     ])
     
     # ========== TAB 1: Technical Chart ==========
@@ -853,6 +854,369 @@ def main():
                 st.markdown("---")
         else:
             st.info("📝 No active alerts. Create one to get notified!")
+    
+    # ========== TAB 6: STOCK SCREENER ==========
+    with tab6:
+        st.header("🎯 Stock Screener & Classification")
+        st.markdown("Scan và phân loại cổ phiếu theo nhiều tiêu chí")
+        
+        # Two columns: Settings and Results
+        col_settings, col_results = st.columns([1, 2])
+        
+        with col_settings:
+            st.subheader("⚙️ Cài đặt Scan")
+            
+            # Scan settings
+            scan_exchange = st.selectbox(
+                "Sàn giao dịch",
+                ["HOSE", "HNX", "HOSE+HNX"],
+                key="screener_exchange"
+            )
+            
+            scan_limit = st.slider(
+                "Số lượng mã quét",
+                min_value=10,
+                max_value=100,
+                value=20,
+                step=10,
+                key="screener_limit"
+            )
+            
+            st.markdown("---")
+            st.subheader("🔍 Bộ lọc")
+            
+            # Filters
+            filter_growth = st.selectbox(
+                "Growth Potential",
+                ["All", "high_growth", "growth", "stable", "value", "neutral"],
+                key="filter_growth"
+            )
+            
+            filter_risk = st.selectbox(
+                "Risk Level",
+                ["All", "low_risk", "medium_risk", "high_risk"],
+                key="filter_risk"
+            )
+            
+            filter_rating = st.selectbox(
+                "Overall Rating",
+                ["All", "A+", "A", "B", "C", "D", "F"],
+                key="filter_rating"
+            )
+            
+            filter_min_score = st.slider(
+                "Điểm tối thiểu",
+                min_value=0.0,
+                max_value=10.0,
+                value=5.0,
+                step=0.5,
+                key="filter_min_score"
+            )
+            
+            st.markdown("---")
+            
+            # Scan button
+            if st.button("🚀 Bắt đầu Scan", type="primary", use_container_width=True):
+                with st.spinner(f"⏳ Đang scan {scan_limit} stocks... (có thể mất {scan_limit // 3} phút)"):
+                    try:
+                        # Prepare exchanges
+                        exchanges = []
+                        if scan_exchange == "HOSE":
+                            exchanges = ["HOSE"]
+                        elif scan_exchange == "HNX":
+                            exchanges = ["HNX"]
+                        else:
+                            exchanges = ["HOSE", "HNX"]
+                        
+                        # Call API to scan
+                        url = f"{API_URL}/classify/market"
+                        params = {
+                            "exchanges": ",".join(exchanges),
+                            "limit": scan_limit,
+                            "delay": 3.0
+                        }
+                        
+                        response = requests.get(url, params=params, timeout=scan_limit * 10)
+                        
+                        if response.status_code == 200:
+                            data = response.json()
+                            
+                            if data.get("success"):
+                                # Store in session state
+                                st.session_state['screener_results'] = data['stocks']
+                                st.session_state['screener_summary'] = data['summary']
+                                st.success(f"✅ Đã quét {len(data['stocks'])} stocks thành công!")
+                                st.rerun()
+                            else:
+                                st.error(f"❌ Error: {data.get('error', 'Unknown error')}")
+                        else:
+                            st.error(f"❌ API Error: {response.status_code}")
+                            
+                    except Exception as e:
+                        st.error(f"❌ Error scanning: {str(e)}")
+            
+            # Quick classify single stock
+            st.markdown("---")
+            st.subheader("🔍 Classify 1 mã")
+            
+            single_symbol = st.text_input(
+                "Nhập mã cổ phiếu",
+                placeholder="VD: FPT",
+                key="single_classify_symbol"
+            )
+            
+            if st.button("Classify", use_container_width=True):
+                if single_symbol:
+                    with st.spinner(f"⏳ Classifying {single_symbol}..."):
+                        try:
+                            url = f"{API_URL}/classify/stock/{single_symbol.upper()}"
+                            response = requests.get(url, timeout=30)
+                            
+                            if response.status_code == 200:
+                                data = response.json()
+                                
+                                if data.get("success"):
+                                    st.session_state['single_classify_result'] = data['data']
+                                    st.rerun()
+                                else:
+                                    st.error(f"❌ {data.get('error')}")
+                            else:
+                                st.error(f"❌ API Error: {response.status_code}")
+                        except Exception as e:
+                            st.error(f"❌ Error: {str(e)}")
+                else:
+                    st.warning("⚠️ Vui lòng nhập mã cổ phiếu")
+        
+        with col_results:
+            # Show single classify result if exists
+            if 'single_classify_result' in st.session_state:
+                result = st.session_state['single_classify_result']
+                
+                st.subheader(f"📊 Kết quả: {result['symbol']}")
+                
+                # Overall rating
+                rating = result['overall_rating']
+                
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.metric(
+                        "Overall Rating",
+                        rating['rating'],
+                        f"{rating['score']}/10"
+                    )
+                
+                with col2:
+                    growth = result['classifications']['growth']
+                    st.metric(
+                        "Growth Score",
+                        f"{growth['score']}/10",
+                        growth['category']
+                    )
+                
+                with col3:
+                    risk = result['classifications']['risk']
+                    st.metric(
+                        "Risk Score",
+                        f"{risk['risk_score']}/10",
+                        risk['category']
+                    )
+                
+                st.markdown("---")
+                
+                # Recommendation
+                st.markdown(f"### {rating['recommendation']}")
+                
+                # Details in expanders
+                with st.expander("📈 Growth Details"):
+                    growth = result['classifications']['growth']
+                    st.write(f"**Category:** {growth['category']}")
+                    st.write(f"**Score:** {growth['score']}/10")
+                    st.write(f"**Description:** {growth['description']}")
+                    if 'roe' in growth:
+                        st.write(f"**ROE:** {growth['roe']}%")
+                    if 'pe' in growth:
+                        st.write(f"**P/E:** {growth['pe']}")
+                    if 'npm' in growth:
+                        st.write(f"**NPM:** {growth['npm']}%")
+                
+                with st.expander("⚠️ Risk Details"):
+                    risk = result['classifications']['risk']
+                    st.write(f"**Category:** {risk['category']}")
+                    st.write(f"**Score:** {risk['risk_score']}/10")
+                    st.write(f"**Description:** {risk['description']}")
+                    st.write(f"**Volatility:** {risk['volatility']}%")
+                    if 'debt_equity' in risk:
+                        st.write(f"**D/E Ratio:** {risk['debt_equity']}")
+                
+                with st.expander("💰 Market Cap Details"):
+                    market_cap = result['classifications']['market_cap']
+                    st.write(f"**Category:** {market_cap['category']}")
+                    st.write(f"**Description:** {market_cap['description']}")
+                    st.write(f"**Market Cap:** {market_cap['market_cap_trillion']} trillion VND")
+                
+                with st.expander("📊 Momentum Details"):
+                    momentum = result['classifications']['momentum']
+                    st.write(f"**Category:** {momentum['category']}")
+                    st.write(f"**Score:** {momentum['momentum_score']}/10")
+                    st.write(f"**Description:** {momentum['description']}")
+                
+                st.markdown("---")
+                
+                if st.button("🗑️ Clear Result"):
+                    del st.session_state['single_classify_result']
+                    st.rerun()
+            
+            # Show scan results if exists
+            elif 'screener_results' in st.session_state and st.session_state['screener_results']:
+                st.subheader("📊 Kết quả Scan")
+                
+                # Summary
+                if 'screener_summary' in st.session_state:
+                    summary = st.session_state['screener_summary']
+                    
+                    col1, col2, col3, col4 = st.columns(4)
+                    
+                    with col1:
+                        st.metric("Total Stocks", summary['total_stocks'])
+                    
+                    with col2:
+                        st.metric("Avg Score", summary['avg_score'])
+                    
+                    with col3:
+                        top_rating = list(summary['by_rating'].keys())[0] if summary['by_rating'] else "N/A"
+                        st.metric("Top Rating", top_rating)
+                    
+                    with col4:
+                        top_count = list(summary['by_rating'].values())[0] if summary['by_rating'] else 0
+                        st.metric("Count", top_count)
+                
+                st.markdown("---")
+                
+                # Convert to DataFrame
+                df_screen = pd.DataFrame(st.session_state['screener_results'])
+                
+                # Apply filters
+                filtered_df = df_screen.copy()
+                
+                if filter_growth != "All":
+                    filtered_df = filtered_df[filtered_df['growth_category'] == filter_growth]
+                
+                if filter_risk != "All":
+                    filtered_df = filtered_df[filtered_df['risk_category'] == filter_risk]
+                
+                if filter_rating != "All":
+                    filtered_df = filtered_df[filtered_df['overall_rating'] == filter_rating]
+                
+                filtered_df = filtered_df[filtered_df['overall_score'] >= filter_min_score]
+                
+                st.write(f"**Showing {len(filtered_df)} / {len(df_screen)} stocks**")
+                
+                # Display table
+                if not filtered_df.empty:
+                    # Select columns to display
+                    display_df = filtered_df[[
+                        'symbol', 'overall_rating', 'overall_score',
+                        'growth_category', 'risk_category', 
+                        'market_cap_category', 'momentum_category',
+                        'recommendation'
+                    ]].copy()
+                    
+                    # Rename columns
+                    display_df.columns = [
+                        'Symbol', 'Rating', 'Score',
+                        'Growth', 'Risk',
+                        'Market Cap', 'Momentum',
+                        'Recommendation'
+                    ]
+                    
+                    # Sort by score
+                    display_df = display_df.sort_values('Score', ascending=False)
+                    
+                    # Display dataframe
+                    st.dataframe(
+                        display_df,
+                        use_container_width=True,
+                        height=400
+                    )
+                    
+                    # Download button
+                    csv = filtered_df.to_csv(index=False, encoding='utf-8-sig')
+                    st.download_button(
+                        label="📥 Download CSV",
+                        data=csv,
+                        file_name=f"stock_screener_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                        mime="text/csv",
+                        use_container_width=True
+                    )
+                    
+                    # Charts
+                    st.markdown("---")
+                    st.subheader("📊 Distribution Charts")
+                    
+                    chart_col1, chart_col2 = st.columns(2)
+                    
+                    with chart_col1:
+                        # Rating distribution
+                        rating_counts = filtered_df['overall_rating'].value_counts()
+                        st.bar_chart(rating_counts)
+                        st.caption("Rating Distribution")
+                    
+                    with chart_col2:
+                        # Growth distribution
+                        growth_counts = filtered_df['growth_category'].value_counts()
+                        st.bar_chart(growth_counts)
+                        st.caption("Growth Category Distribution")
+                    
+                else:
+                    st.info("ℹ️ Không có stocks nào phù hợp với bộ lọc")
+                
+                st.markdown("---")
+                
+                if st.button("🗑️ Clear Results"):
+                    del st.session_state['screener_results']
+                    if 'screener_summary' in st.session_state:
+                        del st.session_state['screener_summary']
+                    st.rerun()
+            
+            else:
+                st.info("👈 Chọn cài đặt và nhấn 'Bắt đầu Scan' để quét thị trường")
+                
+                # Show quick guide
+                st.markdown("---")
+                st.subheader("📖 Hướng dẫn sử dụng")
+                
+                st.markdown("""
+                **Stock Screener giúp bạn:**
+                1. 🔍 Quét toàn bộ thị trường (HOSE/HNX)
+                2. 📊 Phân loại theo 5 nhóm:
+                   - Growth Potential
+                   - Risk Level
+                   - Market Cap
+                   - Momentum
+                   - Overall Rating
+                3. 🎯 Lọc theo tiêu chí tùy chỉnh
+                4. 📥 Download kết quả CSV
+                
+                **Cách sử dụng:**
+                1. Chọn sàn và số lượng mã quét
+                2. Nhấn "Bắt đầu Scan"
+                3. Đợi kết quả (tùy số lượng)
+                4. Áp dụng bộ lọc nếu cần
+                5. Download CSV để phân tích thêm
+                
+                **Rating System:**
+                - 🌟 A+/A: Strong Buy/Buy
+                - 👀 B: Hold/Accumulate
+                - ⏸️ C: Hold
+                - ⚠️ D: Watch
+                - 🚫 F: Avoid
+                
+                **Tips:**
+                - Scan 20-50 stocks để nhanh (2-5 phút)
+                - Kết hợp nhiều bộ lọc để tìm cổ phiếu tốt nhất
+                - Classify 1 mã để xem chi tiết
+                """)
 
 if __name__ == "__main__":
     main()
